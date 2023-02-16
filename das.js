@@ -198,6 +198,29 @@ DASApp_cmd.setUnstash = DASApp_cmd["set-unstash"] = function (key) {
     delete this.state.stashSet[key];
 };
 
+//#TODO:
+DASApp_cmd.copyFrom = DASApp_cmd["copy-from"] = DASApp_cmd["cpf"] = DASApp_cmd["pull"] = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.copyTo = DASApp_cmd["copy-to"] = DASApp_cmd["cpt"] = DASApp_cmd["push"] = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.moveFrom = DASApp_cmd["move-from"] = DASApp_cmd["mvf"] = DASApp_cmd["take"] = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.moveTo = DASApp_cmd["move-to"] = DASApp_cmd["mvt"] = DASApp_cmd["give"] = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.remove = DASApp_cmd["rmf"] = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.removeAt = DASApp_cmd["rmt"] = function (key) {
+};
 
 /* DASApp command alias */
 DASApp_cmd.i = DASApp_cmd.init;

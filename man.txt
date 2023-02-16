@@ -135,8 +135,8 @@ Operation with selectSet:
 Operation:
   copy-from          | cpf    | pull
   copy-to            | cpt    | push
-  move-from          | mvf
-  move-to            | mvr
+  move-from          | mvf    | take
+  move-to            | mvr    | give
   remove             | rmf
   remove-at          | rmt
 

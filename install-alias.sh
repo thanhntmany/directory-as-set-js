@@ -2,5 +2,5 @@
 
 
 SCRIPT_DIR=$( dirname -- "$(readlink -f "$0" )")
-export DAL_PKG_DIR="$SCRIPT_DIR"
-alias dal='node "$DAL_PKG_DIR/cli"'
+export DAS_PKG_DIR="$SCRIPT_DIR"
+alias das='node "$DAS_PKG_DIR/das.js"'
