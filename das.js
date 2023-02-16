@@ -248,7 +248,7 @@ exports.DASdirectory = DASdirectory;
 // Check if this module is being run directly.
 if (require.main === module) {
     const baseApp = createApp();
-    console.dir(baseApp, { depth: null })
+    console.dir(baseApp.state, { depth: null })
 
 
 };

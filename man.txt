@@ -8,7 +8,7 @@ Note:
 -> Hỗ trợ phương thức chain operation để nối chuỗi hành động
 
 
-dal [<operation>] [[--]<operations>]
+das [<operation>] [[--]<operations>]
 
 Default variables:
     bd (base-directory)     = current directory
@@ -85,21 +85,21 @@ Macro operation:
 
 ##============================
 
-dal
+das
 
 Setup:
   init
-    Khởi tạo folder neo trạng thái dự án .dal tại thư mục hiện tại.
+    Khởi tạo folder neo trạng thái dự án .das tại thư mục hiện tại.
   state
     Show state hiện tại
   stateful
-    Sau khi chạy xong process sẽ tạo ra directory .dal để lưu lại trạng thái cho các lần chạy tiếp theo.
+    Sau khi chạy xong process sẽ tạo ra directory .das để lưu lại trạng thái cho các lần chạy tiếp theo.
   stateless
-    Chỉ run stateless trong và không tạo ra directory .dal
+    Chỉ run stateless trong và không tạo ra directory .das
   clear-cache
-    Xóa cache trong .dal
+    Xóa cache trong .das
   clean
-    Xóa các nội dung trạng thái: .dal
+    Xóa các nội dung trạng thái: .das
 
   base (<partner-alias>|<URI directory>)
   partner (<partner-alias>|<URI directory>)
@@ -140,28 +140,28 @@ Operation:
   remove             | rmf
   remove-at          | rmt
 
-dal [setup] [select] [operation]
+das [setup] [select] [operation]
 
 #### dev process
 
 # setup alias
-dal init
-dal partner (<partner-alias>|<URI directory>) alias <partner-alias>
-dal partner (<partner-alias>|<URI directory>) alias <partner-alias>
-dal partner (<partner-alias>|<URI directory>) alias <partner-alias>
+das init
+das partner (<partner-alias>|<URI directory>) alias <partner-alias>
+das partner (<partner-alias>|<URI directory>) alias <partner-alias>
+das partner (<partner-alias>|<URI directory>) alias <partner-alias>
 
 #------------
-dal pull
+das pull
 @@ dev, edit, build.....
-dal select-inter push
+das select-inter push
 
 
 #### Build process
-dal partner (<partner-alias>|<URI directory>) pull
+das partner (<partner-alias>|<URI directory>) pull
 @@ build.....
-dal select-inter remove clean
+das select-inter remove clean
 
-#### Build process quite
-node -e "$(curl -fsSL https://dal.dns.astraiers.com/dal.js)" stateless partner (<partner-alias>|<URI directory>) pull
+#### Build process quite, don't leave anything.
+curl -fsSL https://das.dns.astraiers.com/das.js | node - stateless partner (<partner-alias>|<URI directory>) pull
 @@ build.....
-node -e "$(curl -fsSL https://dal.dns.astraiers.com/dal.js)" stateless partner (<partner-alias>|<URI directory>) select-inter remove clean
+curl -fsSL https://das.dns.astraiers.com/das.js | node - stateless partner (<partner-alias>|<URI directory>) select-inter remove clean
