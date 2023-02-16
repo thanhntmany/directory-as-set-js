@@ -1,0 +1,167 @@
+Note:
+- Vận hành độc lập, có thể dùng như 1 script run ngay từ 1 blob (git, remote static file, ....)
+-> Tool lõi là 1 script nằm trong 1 file duy nhất.
+
+- Hỗ trợ cơ chế URI: thông qua các scheme git: file: http: https: .....
+
+- Chỉ cần load về 1 lần rồi dùng luôn cho nhiều hành động
+-> Hỗ trợ phương thức chain operation để nối chuỗi hành động
+
+
+dal [<operation>] [[--]<operations>]
+
+Default variables:
+    bd (base-directory)     = current directory
+      -> URI directory được chọn làm thư mục thực hiện các operation
+    pd (partner-directory)  = current directory
+      -> URI directory được chọn làm thư mục đối tác thực hiện operation
+
+    cou (central-object-unit) = [] | object(stdin)
+      -> Đại diện cho output từ operation trước đó
+      -> Trung tâm vận hành
+      Nếu stdin parse thành công ra được chuỗi chứa string thì set ar = object(stdin)
+
+    diff-cob = false
+    diff-cop = true
+    diff-coi = false
+      -> cái nào true thì lúc chạy diff sẽ lưu lại cái đó
+
+    3 biến lưu kết quả cho hàm diff
+    cob = {}
+      -> Đại diện cho phần nằm trong base mà không có trong partner
+    cop = {}
+      -> Đại diện cho phần nằm trong partner mà không có trong base
+    coi = {}
+      -> Đại diện cho phần nằm trong cả partner và không có trong base
+
+    4 biến stack, chỗ lưu tạm cho ar nếu cần
+    co1 = {}
+    co2 = {}
+    co3 = {}
+    co4 = {}
+
+Operations:
+    -S:
+      Tìm load file setting từ các directory cao hơn.
+
+    get <variable name>
+      Thực hiện set object = giá trị của <variable name>
+    set <variable name> [<value>]
+      -> Thực hiện gán giá trị cho các biến hiện tại trong process
+      <value> mặc định bằng true
+
+    cou-clear
+      object = []
+    cou-push [<value>[ <value>[ <value>[...]]]
+      -> Thêm các <value> vào output
+      NOTE: nên thêm -- vào sau chuỗi của out-push để thông báo process chuyển sang operations tiếp theo
+    cou-remove [<value>[ <value>[ <value>[...]]]
+      -> Loại bỏ các <value> khỏi output nếu có
+      NOTE: nên thêm -- vào sau chuỗi của out-push để thông báo process chuyển sang operations tiếp theo
+    cou-expand
+    cou-filter <regex>
+      -> Lọc output bằng regex
+
+    diff [<partnerURI>]
+      Nếu có <partnerURI> thì set pd=<partnerURI>
+      -> Thực hiện so sánh 2 cây thư mục giữa base-directory và partner-directory
+      => base + inner + dest
+
+
+Macro operation:
+    -s
+      load setting (chứa uri alias để code thuận tiện hơn)
+
+    pull [<URI to directory>]
+      Copy toàn bộ cây thư mục từ <URI to directory> về ghi đè lên base-directory
+
+    push [<URI to directory>]
+      Copy toàn bộ cây thư mục từ base-directory ghi đè lên <URI to directory>
+      và push lên git nếu uri của git
+
+    filter [<URI to directory>]
+      So khớp với <URI to directory> và xóa toàn bộ file bị trùng lặp ở base-directory
+
+
+##============================
+
+dal
+
+Setup:
+  init
+    Khởi tạo folder neo trạng thái dự án .dal tại thư mục hiện tại.
+  state
+    Show state hiện tại
+  stateful
+    Sau khi chạy xong process sẽ tạo ra directory .dal để lưu lại trạng thái cho các lần chạy tiếp theo.
+  stateless
+    Chỉ run stateless trong và không tạo ra directory .dal
+  clear-cache
+    Xóa cache trong .dal
+  clean
+    Xóa các nội dung trạng thái: .dal
+
+  base (<partner-alias>|<URI directory>)
+  partner (<partner-alias>|<URI directory>)
+    set partner tương ứng với partner-alias hoặc URI directory
+  alias <partner-alias>
+    set alias cho <partner URI directory> hiện tại
+  alias-clear
+  partner-pwd
+    Show địa chỉ của partner trong thiết bị hiện tại
+
+Operation for selecting:
+
+Select:
+  select             | s            [[list off path]] [--]
+  select-base        | s-base
+  select-inter       | s-inter
+  select-partner     | s-partner
+  select-regex       | s-regex      <regex>
+
+Deselect:
+  deselect [[list off path]] [--]
+  deselect-base
+  deselect-inter
+  deselect-partner
+  deselect-regex
+
+Operation with selectSet:
+  set-clear
+  set-stash <key>
+  set-unstash <key>
+
+
+Operation:
+  copy-from          | cpf    | pull
+  copy-to            | cpt    | push
+  move-from          | mvf
+  move-to            | mvr
+  remove             | rmf
+  remove-at          | rmt
+
+dal [setup] [select] [operation]
+
+#### dev process
+
+# setup alias
+dal init
+dal partner (<partner-alias>|<URI directory>) alias <partner-alias>
+dal partner (<partner-alias>|<URI directory>) alias <partner-alias>
+dal partner (<partner-alias>|<URI directory>) alias <partner-alias>
+
+#------------
+dal pull
+@@ dev, edit, build.....
+dal select-inter push
+
+
+#### Build process
+dal partner (<partner-alias>|<URI directory>) pull
+@@ build.....
+dal select-inter remove clean
+
+#### Build process quite
+node -e "$(curl -fsSL https://dal.dns.astraiers.com/dal.js)" stateless partner (<partner-alias>|<URI directory>) pull
+@@ build.....
+node -e "$(curl -fsSL https://dal.dns.astraiers.com/dal.js)" stateless partner (<partner-alias>|<URI directory>) select-inter remove clean

@@ -1,0 +1,19 @@
+{
+  "name": "directory-as-set",
+  "version": "1.0.0",
+  "description": "directory-as-set.js",
+  "main": "das.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thanhntmany/directory-as-set-js.git"
+  },
+  "author": "Thanhntmany@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thanhntmany/directory-as-set-js/issues"
+  },
+  "homepage": "https://github.com/thanhntmany/directory-as-set-js#readme"
+}
