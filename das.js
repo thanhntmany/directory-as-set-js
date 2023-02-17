@@ -258,8 +258,12 @@ DASApp_proto.nop = function (key) {
   // Do nothing
 };
 
-DASApp_proto.exec = function(args) {
-  return (new DASCmdRunner(this, args)).exec();
+DASApp_proto.cmd = function (args) {
+  return new DASCmdRunner(this, args);
+};
+
+DASApp_proto.exec = function (args) {
+  return this.cmd(args).exec();
 };
 
 function DASCmdRunner(app, args) {
@@ -271,6 +275,7 @@ const DASCmdRunner_proto = DASCmdRunner.prototype;
 /* DASApp command alias */
 DASCmdRunner_proto.cmdAlias = {
   "constructor": "nop",
+  "cmd": "nop",
   "cmdAlias": "nop",
   "getCmd": "nop",
   "exec": "nop",
@@ -312,7 +317,7 @@ DASCmdRunner_proto.cmdAlias = {
 
 // Helper
 function camelize(str) {
-  return str.toLowerCase().replaceAll(/(\-\w)/g, function () {
+  return str.toLowerCase().replace(/(\-\w)/g, function () {
     return arguments[arguments.length - 3].replace("-", "").toUpperCase();
   });
 };
@@ -324,7 +329,20 @@ DASCmdRunner_proto.normalizeCmd = function (cmd) {
   return "nop";
 };
 
+DASCmdRunner_proto.nextArg = function () {
+  return this.restArgs.shift();
+};
+
 DASCmdRunner_proto.exec = function () {
+  var cmdName;
+
+  while ((cmdName = this.nextArg()) !== undefined) {
+    console.log("cmd:", cmdName);
+    cmdName = this.normalizeCmd(cmdName);
+    console.log("--> cmd:", cmdName);
+    if (cmdName === "nop") continue;
+  };
+
   console.log(this.restArgs);
   return 123;
 };
@@ -348,8 +366,10 @@ exports.DASdirectory = DASdirectory;
 // Check if this module is being run directly or being run by raw script.
 if (require.main === module || require.main === undefined) {
   const app = createApp();
-  console.dir(app.state, { depth: null })
 
-  app.exec(process.argv.slice(2));
+  // app.exec(process.argv.slice(2));
+  var cmdRunner = app.cmd(process.argv.slice(2));
+  console.dir(cmdRunner, { depth: null })
+  cmdRunner.exec();
 
 };
