@@ -384,7 +384,7 @@ if (require.main === module || require.main === undefined) {
 
   var args = process.argv.slice(2);
   // Default run in stateless mode if run without entry script.
-  if (require.main === undefined) args.unshift("stateless");
+  if (require.main === undefined) app.stateless();
 
   var cmdRunner = app.cmd(args);
   console.dir(cmdRunner, { depth: null })
