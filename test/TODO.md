@@ -1,0 +1,1 @@
+- Make sure all cmd alias are avaliable

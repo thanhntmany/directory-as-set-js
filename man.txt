@@ -113,24 +113,23 @@ Setup:
 Operation for selecting:
 
 Select:
-  select             | s            [[list off path]] [--]
-  select-base        | s-base
-  select-inter       | s-inter
-  select-partner     | s-partner
-  select-regex       | s-regex      <regex>
+  select             | s                [[list off path]] [--]
+  select-base        | s-base    | sb
+  select-inter       | s-inter   | si
+  select-partner     | s-partner | sp
+  select-regex       | s-regex   | sr    <regex>
 
 Deselect:
-  deselect [[list off path]] [--]
-  deselect-base
-  deselect-inter
-  deselect-partner
-  deselect-regex
+  deselect           | d                [[list off path]] [--]
+  deselect-base      | d-base    | db
+  deselect-inter     | d-inter   | di 
+  deselect-partner   | d-partner | dp 
+  deselect-regex     | d-regex   | dr    <regex>
 
 Operation with selectSet:
   set-clear
   set-stash <key>
   set-unstash <key>
-
 
 Operation:
   copy-from          | cpf    | pull
@@ -139,6 +138,15 @@ Operation:
   move-to            | mvr    | give
   remove             | rmf
   remove-at          | rmt
+  touch
+  touch-at
+
+For set output:
+  expand
+  resolve
+
+
+
 
 das [setup] [select] [operation]
 
@@ -162,6 +170,13 @@ das partner (<partner-alias>|<URI directory>) pull
 das select-inter remove clean
 
 #### Build process quite, don't leave anything.
-curl -fsSL https://das.dns.astraiers.com/das.js | node - stateless partner (<partner-alias>|<URI directory>) pull
+curl -fsSL https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless partner (<partner-alias>|<URI directory>) pull
 @@ build.....
-curl -fsSL https://das.dns.astraiers.com/das.js | node - stateless partner (<partner-alias>|<URI directory>) select-inter remove clean
+curl -fsSL https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless partner (<partner-alias>|<URI directory>) select-inter remove clean
+
+
+
+node -e "$(wget https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js -O -)"
+
+node -e "$(curl -fsSL https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js)"
+###
