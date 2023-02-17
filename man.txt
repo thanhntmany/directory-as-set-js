@@ -152,8 +152,6 @@ For set output:
   resolve
 
 
-
-
 das [setup] [select] [operation]
 
 #### dev process

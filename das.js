@@ -93,10 +93,6 @@ function DASApp() {
 };
 const DASApp_cmd = DASApp.prototype;
 
-DASApp_cmd.run = function () {
-
-};
-
 /* DASApp command */
 
 //#TODO:
@@ -258,12 +254,69 @@ DASApp_cmd.touch = function (key) {
 DASApp_cmd.touchAt = function (key) {
 };
 
-/* DASApp command alias */
-DASApp_cmd.i = DASApp_cmd.init;
-DASApp_cmd.b = DASApp_cmd.base;
-DASApp_cmd.p = DASApp_cmd.partner;
-DASApp_cmd.a = DASApp_cmd.alias;
+DASApp_cmd.nop = function (key) {
+  // Do nothing
+};
 
+
+/* DASApp command alias */
+DASApp_cmd.cmdAlias = {
+  "constructor": "nop",
+  "cmdAlias": "nop",
+  "getCmd": "nop",
+  "run": "nop",
+
+  "i": "init",
+  "sf": "stateful",
+  "sl": "stateless",
+  "b": "base",
+  "p": "partner",
+  "a": "alias",
+  "s": "select",
+  "sb": "selectBase",
+  "si": "selectInter",
+  "sio": "selectInterOlder",
+  "sin": "selectInterNewer",
+  "sp": "selectPartner",
+  "sr": "selectRegex",
+  "d": "deselect",
+  "db": "deselectBase",
+  "di": "deselectInter",
+  "dio": "deselectInterOlder",
+  "din": "deselectInterNewer",
+  "dp": "deselectPartner",
+  "dr": "deselectRegex",
+  "cpf": "copyFrom",
+  "cpt": "copyTo",
+  "mvf": "moveFrom",
+  "mvr": "moveTo",
+  "rmf": "remove",
+  "rmt": "removeAt",
+  "tof": "touch",
+  "tot": "touchAt",
+
+  "pull": "copyFrom",
+  "push": "copyTo",
+  "take": "moveFrom",
+  "give": "moveTo",
+};
+
+function camelize(str) {
+  return str.toLowerCase().replaceAll(/(\-\w)/g, function () {
+    return arguments[arguments.length - 3].replace("-", "").toUpperCase();
+  });
+};
+
+DASApp_cmd.getCmd = function (cmd) {
+  cmd = camelize(cmd);
+  if (cmd in this.cmdAlias) cmd = this.cmdAlias[cmd];
+  if (cmd in this) return this[cmd];
+  return DASApp_cmd.nop;
+};
+
+DASApp_cmd.run = function () {
+
+};
 
 /**
  * Expose `createApp()` + Core classes
