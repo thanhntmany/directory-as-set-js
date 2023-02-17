@@ -254,4 +254,6 @@ if (require.main === module || require.main === undefined) {
     console.log(`${index}: ${val}`);
   });
 
+  console.dir(process.argv, { depth: null })
+
 };
