@@ -245,8 +245,8 @@ exports.DASdirectory = DASdirectory;
 /**
  * Run module as an independent application.
  */
-// Check if this module is being run directly.
-if (require.main === module) {
+// Check if this module is being run directly or being run by raw script.
+if (require.main === module || require.main === undefined) {
     const baseApp = createApp();
     console.dir(baseApp.state, { depth: null })
 

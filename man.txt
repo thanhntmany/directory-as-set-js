@@ -170,9 +170,9 @@ das partner (<partner-alias>|<URI directory>) pull
 das select-inter remove clean
 
 #### Build process quite, don't leave anything.
-curl -fsSL https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless partner (<partner-alias>|<URI directory>) pull
+curl -s https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless partner (<partner-alias>|<URI directory>) pull
 @@ build.....
-curl -fsSL https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless partner (<partner-alias>|<URI directory>) select-inter remove clean
+curl -s https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless partner (<partner-alias>|<URI directory>) select-inter remove clean
 
 
 
@@ -180,3 +180,5 @@ node -e "$(wget https://raw.githubusercontent.com/thanhntmany/directory-as-set-j
 
 node -e "$(curl -fsSL https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js)"
 ###
+
+curl -s https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/8fb098ea7a45ac341b47d81740ed6600080cc065/das.js | node - stateless partner 
