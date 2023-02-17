@@ -91,180 +91,189 @@ function DASApp() {
   this.queue = [];
   this.state = new DASAppState();
 };
-const DASApp_cmd = DASApp.prototype;
+const DASApp_proto = DASApp.prototype;
 
 /* DASApp command */
 
 //#TODO:
-DASApp_cmd.init = function () {
+DASApp_proto.init = function () {
 
 };
 
 //#TODO:
-DASApp_cmd.state = function () {
+DASApp_proto.state = function () {
 
 };
 
-DASApp_cmd.stateful = function () {
+DASApp_proto.stateful = function () {
   this.state.isStateful = true;
 };
 
-DASApp_cmd.stateless = function () {
+DASApp_proto.stateless = function () {
   this.state.isStateful = false;
 };
 
 //#TODO:
-DASApp_cmd.clearCache = function () {
+DASApp_proto.clearCache = function () {
   return this;
 };
 
 //#TODO:
-DASApp_cmd.clean = function () {
+DASApp_proto.clean = function () {
 };
 
 //#TODO:
-DASApp_cmd.clean = function () {
+DASApp_proto.clean = function () {
 };
 
-DASApp_cmd.base = function (inputString) {
+DASApp_proto.base = function (inputString) {
   this.state.setBase(inputString)
 };
 
 //#TODO:
-DASApp_cmd.basePwd = function (inputString) {
+DASApp_proto.basePwd = function (inputString) {
 };
 
-DASApp_cmd.partner = function (inputString) {
+DASApp_proto.partner = function (inputString) {
   this.state.setPartner(inputString)
 };
 
-DASApp_cmd.alias = function (inputString) {
+DASApp_proto.alias = function (inputString) {
   this.state.alias(inputString, this.state.partner.uri)
 };
 
-DASApp_cmd.aliasClear = function () {
+DASApp_proto.aliasClear = function () {
   this.state.aliasClear();
 };
 
 //#TODO:
-DASApp_cmd.partnerPwd = function (inputString) {
+DASApp_proto.partnerPwd = function (inputString) {
 };
 
-DASApp_cmd.select = function () {
+DASApp_proto.select = function () {
   var _set = this.state.set;
   _set.select.apply(_set, arguments);
 };
 
 //#TODO:
-DASApp_cmd.selectBase = function () {
+DASApp_proto.selectBase = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectInter = function () {
+DASApp_proto.selectInter = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectInterOlder = function () {
+DASApp_proto.selectInterOlder = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectInterNewer = function () {
+DASApp_proto.selectInterNewer = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectPartner = function () {
+DASApp_proto.selectPartner = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectRegex = function () {
+DASApp_proto.selectRegex = function () {
 };
 
-DASApp_cmd.deselect = function () {
+DASApp_proto.deselect = function () {
   var _set = this.state.set;
   _set.deselect.apply(_set, arguments);
 };
 
 //#TODO:
-DASApp_cmd.deselectBase = function () {
+DASApp_proto.deselectBase = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectInter = function () {
+DASApp_proto.deselectInter = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectInterOlder = function () {
+DASApp_proto.deselectInterOlder = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectInterNewer = function () {
+DASApp_proto.deselectInterNewer = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectPartner = function () {
+DASApp_proto.deselectPartner = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectRegex = function () {
+DASApp_proto.deselectRegex = function () {
 };
 
 //#TODO:
-DASApp_cmd.setClear = function () {
+DASApp_proto.setClear = function () {
   this.state.set.clear();
 };
 
-DASApp_cmd.setStash = function (key) {
+DASApp_proto.setStash = function (key) {
   this.state.stashSet[key] = this.this.state.set;
 };
 
-DASApp_cmd.setUnstash = function (key) {
+DASApp_proto.setUnstash = function (key) {
   this.this.state.set = this.state.stashSet[key];
   delete this.state.stashSet[key];
 };
 
 //#TODO:
-DASApp_cmd.copyFrom = function (key) {
+DASApp_proto.copyFrom = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.copyTo = function (key) {
+DASApp_proto.copyTo = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.moveFrom = function (key) {
+DASApp_proto.moveFrom = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.moveTo = function (key) {
+DASApp_proto.moveTo = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.remove = function (key) {
+DASApp_proto.remove = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.removeAt = function (key) {
+DASApp_proto.removeAt = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.touch = function (key) {
+DASApp_proto.touch = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.touchAt = function (key) {
+DASApp_proto.touchAt = function (key) {
 };
 
-DASApp_cmd.nop = function (key) {
+DASApp_proto.nop = function (key) {
   // Do nothing
 };
 
+DASApp_proto.exec = function(args) {
+  return (new DASCmdRunner(this, args)).exec();
+};
+
+function DASCmdRunner(app, args) {
+  this.app = app;
+  this.restArgs = args;
+};
+const DASCmdRunner_proto = DASCmdRunner.prototype;
 
 /* DASApp command alias */
-DASApp_cmd.cmdAlias = {
+DASCmdRunner_proto.cmdAlias = {
   "constructor": "nop",
   "cmdAlias": "nop",
   "getCmd": "nop",
-  "run": "nop",
+  "exec": "nop",
 
   "i": "init",
   "sf": "stateful",
@@ -301,21 +310,23 @@ DASApp_cmd.cmdAlias = {
   "give": "moveTo",
 };
 
+// Helper
 function camelize(str) {
   return str.toLowerCase().replaceAll(/(\-\w)/g, function () {
     return arguments[arguments.length - 3].replace("-", "").toUpperCase();
   });
 };
 
-DASApp_cmd.getCmd = function (cmd) {
+DASCmdRunner_proto.normalizeCmd = function (cmd) {
   cmd = camelize(cmd);
   if (cmd in this.cmdAlias) cmd = this.cmdAlias[cmd];
-  if (cmd in this) return this[cmd];
-  return DASApp_cmd.nop;
+  if (cmd in this.app) return cmd;
+  return "nop";
 };
 
-DASApp_cmd.run = function () {
-
+DASCmdRunner_proto.exec = function () {
+  console.log(this.restArgs);
+  return 123;
 };
 
 /**
@@ -336,13 +347,9 @@ exports.DASdirectory = DASdirectory;
  */
 // Check if this module is being run directly or being run by raw script.
 if (require.main === module || require.main === undefined) {
-  const baseApp = createApp();
-  console.dir(baseApp.state, { depth: null })
+  const app = createApp();
+  console.dir(app.state, { depth: null })
 
-  process.argv.forEach((val, index) => {
-    console.log(`${index}: ${val}`);
-  });
-
-  console.dir(process.argv, { depth: null })
+  app.exec(process.argv.slice(2));
 
 };
