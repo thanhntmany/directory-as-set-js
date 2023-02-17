@@ -259,7 +259,7 @@ DASApp_proto.nop = function (key) {
 };
 
 DASApp_proto.dryrun = function (type) {
-  this.state.isDryrun = (type.toLowerCase()==="on");
+  this.state.isDryrun = (type.toLowerCase() === "on");
 };
 
 //#TODO:
@@ -281,6 +281,8 @@ DASApp_proto.exec = function (args) {
 function DASCmdRunner(app, args) {
   this.app = app;
   this.restArgs = args;
+  this.curCmdName = null;
+  this.curParseType = null;
   this.queue = [];
 };
 const DASCmdRunner_proto = DASCmdRunner.prototype;
@@ -355,24 +357,59 @@ DASCmdRunner_proto.giveBackArg = function () {
   return _.unshift.apply(_, arguments);
 };
 
-DASCmdRunner_proto.cmdParseMap = {
+DASCmdRunner_proto.cmdParserTypeMap = {
   // Default cmd no param
   oneParam: ["base", "partner", "alias", "selectRegex", "deselectRegex", "setStash", "setUnstash"],
   multiParam: ["select", "deselect"]
 };
 
-DASCmdRunner_proto.parseCmd = function () {
-  var cmdName;
-  while ((cmdName = this.nextArg()) !== undefined) {
-    cmdName = this.normalizeCmd(cmdName);
-    if (cmdName === "nop") continue;
-
-    var paserType = "noParam"
-    for (var paserType in this.cmdParseMap) {
-      if (cmdName in this.cmdParseMap[paserType]) {
-        paserType = paserType
-      };
+DASCmdRunner_proto.getCmdParserType = function (cmdName) {
+  var paserType = "noParam"
+  for (var _type in this.cmdParserTypeMap) {
+    if (cmdName in this.cmdParserTypeMap[_type]) {
+      paserType = _type
+      break;
     };
+  };
+
+  return paserType;
+};
+
+DASCmdRunner_proto.cmdParser_noParam = function () {
+  this.queue.push({
+    cmd: this.curCmdName,
+    args: null
+  });
+};
+
+DASCmdRunner_proto.cmdParser_oneParam = function () {
+  this.queue.push({
+    cmd: this.curCmdName,
+    args: this.nextArg(),
+  });
+};
+
+DASCmdRunner_proto.cmdParser_multiParam = function () {
+  var args = [], arg;
+  while ((arg = this.nextArg()) !== undefined) {
+    if (arg === "--") break;
+    args.push(arg);
+  };
+
+  this.queue.push({
+    cmd: this.curCmdName,
+    args: args,
+  });
+};
+
+DASCmdRunner_proto.parse = function () {
+  var cmdName, parseType;
+  while ((cmdName = this.nextArg()) !== undefined) {
+
+    this.curCmdName = this.normalizeCmd(cmdName);
+    this.curParseType = this.getCmdParserType(cmdName);
+    console.log(this);
+    this["cmdParser_" + this.curParseType]();
 
   };
 
@@ -380,7 +417,7 @@ DASCmdRunner_proto.parseCmd = function () {
 
 DASCmdRunner_proto.exec = function () {
 
-  this.parseCmd();
+  this.parse();
   console.log(this.restArgs);
   return 123;
 };
