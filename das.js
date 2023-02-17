@@ -258,6 +258,10 @@ DASApp_proto.nop = function (key) {
   // Do nothing
 };
 
+/**
+ * DASCmdRunner - Executing commandline
+ */
+
 DASApp_proto.cmd = function (args) {
   return new DASCmdRunner(this, args);
 };
@@ -269,6 +273,7 @@ DASApp_proto.exec = function (args) {
 function DASCmdRunner(app, args) {
   this.app = app;
   this.restArgs = args;
+  this.queue = [];
 };
 const DASCmdRunner_proto = DASCmdRunner.prototype;
 
@@ -315,6 +320,10 @@ DASCmdRunner_proto.cmdAlias = {
   "give": "moveTo",
 };
 
+DASCmdRunner_proto.cmdParsersMap = {
+
+};
+
 // Helper
 function camelize(str) {
   return str.toLowerCase().replace(/(\-\w)/g, function () {
@@ -333,14 +342,20 @@ DASCmdRunner_proto.nextArg = function () {
   return this.restArgs.shift();
 };
 
+DASCmdRunner_proto.giveBackArg = function () {
+  var _ = this.restArgs;
+  return _.unshift.apply(_, arguments);
+};
+
 DASCmdRunner_proto.exec = function () {
   var cmdName;
 
   while ((cmdName = this.nextArg()) !== undefined) {
-    console.log("cmd:", cmdName);
     cmdName = this.normalizeCmd(cmdName);
-    console.log("--> cmd:", cmdName);
     if (cmdName === "nop") continue;
+
+
+
   };
 
   console.log(this.restArgs);
@@ -363,12 +378,15 @@ exports.DASdirectory = DASdirectory;
 /**
  * Run module as an independent application.
  */
-// Check if this module is being run directly or being run by raw script.
+// Check if this module is being run directly or without entry script.
 if (require.main === module || require.main === undefined) {
   const app = createApp();
 
-  // app.exec(process.argv.slice(2));
-  var cmdRunner = app.cmd(process.argv.slice(2));
+  var args = process.argv.slice(2);
+  // Default run in stateless mode if run without entry script.
+  if (require.main === undefined) args.unshift("stateless");
+
+  var cmdRunner = app.cmd(args);
   console.dir(cmdRunner, { depth: null })
   cmdRunner.exec();
 

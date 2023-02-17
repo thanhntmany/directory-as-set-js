@@ -8,7 +8,7 @@ I am not a native English speaker. Please inform me if you find any broken Engli
 
 ### FOR PORTABLE EXECUTION (ONLINE)
 ```bash
-curl -s https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - stateless [cmd...]
+curl -s https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/das.js | node - [cmd...]
 ```
 
 ### RUN COMMAND
