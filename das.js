@@ -358,38 +358,39 @@ DASCmdRunner_proto.giveBackArg = function () {
 };
 
 DASCmdRunner_proto.cmdParserTypeMap = {
-  // Default cmd no param
-  oneParam: ["base", "partner", "alias", "selectRegex", "deselectRegex", "setStash", "setUnstash"],
-  multiParam: ["select", "deselect"]
+  // Default 0
+  "base": 1,
+  "partner": 1,
+  "alias": 1,
+  "selectRegex": 1,
+  "deselectRegex": 1,
+  "setStash": 1,
+  "setUnstash": 1,
+  "select": -1,
+  "deselect": -1,
 };
 
 DASCmdRunner_proto.getCmdParserType = function (cmdName) {
-  var paserType = "noParam"
-  for (var _type in this.cmdParserTypeMap) {
-    if (cmdName in this.cmdParserTypeMap[_type]) {
-      paserType = _type
-      break;
-    };
-  };
-
-  return paserType;
+  var numberOfParam = this.cmdParserTypeMap[cmdName];
+  if (numberOfParam === undefined) numberOfParam = 0;
+  return numberOfParam;
 };
 
-DASCmdRunner_proto.cmdParser_noParam = function () {
+DASCmdRunner_proto["cmdParser_0"] = function () {
   this.queue.push({
     cmd: this.curCmdName,
     args: null
   });
 };
 
-DASCmdRunner_proto.cmdParser_oneParam = function () {
+DASCmdRunner_proto["cmdParser_1"] = function () {
   this.queue.push({
     cmd: this.curCmdName,
-    args: this.nextArg(),
+    args: [this.nextArg()],
   });
 };
 
-DASCmdRunner_proto.cmdParser_multiParam = function () {
+DASCmdRunner_proto[["cmdParser_-1"]] = function () {
   var args = [], arg;
   while ((arg = this.nextArg()) !== undefined) {
     if (arg === "--") break;
@@ -408,8 +409,8 @@ DASCmdRunner_proto.parse = function () {
 
     this.curCmdName = this.normalizeCmd(cmdName);
     this.curParseType = this.getCmdParserType(cmdName);
-    console.log(this);
     this["cmdParser_" + this.curParseType]();
+    console.log(this);
 
   };
 
