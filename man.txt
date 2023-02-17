@@ -112,6 +112,10 @@ Setup:
   partner-pwd
     Show địa chỉ của partner trong thiết bị hiện tại
 
+  dryrun (on | off)
+  complete
+    which completion suggestions 
+
 Operation for selecting:
 
 Select:

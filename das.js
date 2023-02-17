@@ -56,6 +56,7 @@ function DASdirectory(uriToDirectory) {
  */
 function DASAppState() {
   this.isStateful = true;
+  this.isDryrun = false;
   this.anchorDir = null;
   this.alias = {};
   this.base = new DASdirectory();
@@ -88,7 +89,6 @@ DASAppState_proto.setPartner = function (inputString) {
  * DASApp
  */
 function DASApp() {
-  this.queue = [];
   this.state = new DASAppState();
 };
 const DASApp_proto = DASApp.prototype;
@@ -258,6 +258,14 @@ DASApp_proto.nop = function (key) {
   // Do nothing
 };
 
+DASApp_proto.dryrun = function (type) {
+  this.state.isDryrun = (type.toLowerCase()==="on");
+};
+
+//#TODO:
+DASApp_proto.complete = function () {
+};
+
 /**
  * DASCmdRunner - Executing commandline
  */
@@ -347,17 +355,32 @@ DASCmdRunner_proto.giveBackArg = function () {
   return _.unshift.apply(_, arguments);
 };
 
-DASCmdRunner_proto.exec = function () {
-  var cmdName;
+DASCmdRunner_proto.cmdParseMap = {
+  // Default cmd no param
+  oneParam: ["base", "partner", "alias", "selectRegex", "deselectRegex", "setStash", "setUnstash"],
+  multiParam: ["select", "deselect"]
+};
 
+DASCmdRunner_proto.parseCmd = function () {
+  var cmdName;
   while ((cmdName = this.nextArg()) !== undefined) {
     cmdName = this.normalizeCmd(cmdName);
     if (cmdName === "nop") continue;
 
-
+    var paserType = "noParam"
+    for (var paserType in this.cmdParseMap) {
+      if (cmdName in this.cmdParseMap[paserType]) {
+        paserType = paserType
+      };
+    };
 
   };
 
+};
+
+DASCmdRunner_proto.exec = function () {
+
+  this.parseCmd();
   console.log(this.restArgs);
   return 123;
 };
@@ -389,5 +412,4 @@ if (require.main === module || require.main === undefined) {
   var cmdRunner = app.cmd(args);
   console.dir(cmdRunner, { depth: null })
   cmdRunner.exec();
-
 };
