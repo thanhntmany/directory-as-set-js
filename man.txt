@@ -102,6 +102,8 @@ Setup:
     Xóa các nội dung trạng thái: .das
 
   base (<partner-alias>|<URI directory>)
+  base-pwd
+    Show địa chỉ của partner trong thiết bị hiện tại
   partner (<partner-alias>|<URI directory>)
     set partner tương ứng với partner-alias hoặc URI directory
   alias <partner-alias>
@@ -113,18 +115,22 @@ Setup:
 Operation for selecting:
 
 Select:
-  select             | s                [[list off path]] [--]
-  select-base        | s-base    | sb
-  select-inter       | s-inter   | si
-  select-partner     | s-partner | sp
-  select-regex       | s-regex   | sr    <regex>
+  select               | s                     [[list off path]] [--]
+  select-base          | s-base        | sb
+  select-inter         | s-inter       | si
+  select-inter-older   | s-inter-older | sio
+  select-inter-newer   | s-inter-newer | sin
+  select-partner       | s-partner     | sp
+  select-regex         | s-regex       | sr    <regex>
 
 Deselect:
-  deselect           | d                [[list off path]] [--]
-  deselect-base      | d-base    | db
-  deselect-inter     | d-inter   | di 
-  deselect-partner   | d-partner | dp 
-  deselect-regex     | d-regex   | dr    <regex>
+  deselect             | d                    [[list off path]] [--]
+  deselect-base        | d-base        | db
+  deselect-inter       | d-inter       | di
+  deselect-inter-older | d-inter-older | dio
+  deselect-inter-newer | d-inter-newer | din
+  deselect-partner     | d-partner     | dp
+  deselect-regex       | d-regex       | dr    <regex>
 
 Operation with selectSet:
   set-clear
@@ -138,8 +144,8 @@ Operation:
   move-to            | mvr    | give
   remove             | rmf
   remove-at          | rmt
-  touch
-  touch-at
+  touch              | tof
+  touch-at           | tot
 
 For set output:
   expand

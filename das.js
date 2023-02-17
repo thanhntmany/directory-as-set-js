@@ -118,8 +118,12 @@ DASApp_cmd.stateless = function () {
 };
 
 //#TODO:
-DASApp_cmd.clearCache = DASApp_cmd["clear-cache"] = function () {
+DASApp_cmd.clearCache = function () {
   return this;
+};
+
+//#TODO:
+DASApp_cmd.clean = function () {
 };
 
 //#TODO:
@@ -130,6 +134,10 @@ DASApp_cmd.base = function (inputString) {
   this.state.setBase(inputString)
 };
 
+//#TODO:
+DASApp_cmd.basePwd = function (inputString) {
+};
+
 DASApp_cmd.partner = function (inputString) {
   this.state.setPartner(inputString)
 };
@@ -138,16 +146,12 @@ DASApp_cmd.alias = function (inputString) {
   this.state.alias(inputString, this.state.partner.uri)
 };
 
-DASApp_cmd.aliasClear = DASApp_cmd["alias-clear"] = function () {
+DASApp_cmd.aliasClear = function () {
   this.state.aliasClear();
 };
 
 //#TODO:
-DASApp_cmd.partnerPwd = DASApp_cmd["partner-pwd"] = function (inputString) {
-};
-
-//#TODO:
-DASApp_cmd.clean = function () {
+DASApp_cmd.partnerPwd = function (inputString) {
 };
 
 DASApp_cmd.select = function () {
@@ -156,15 +160,27 @@ DASApp_cmd.select = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectBase = DASApp_cmd["select-base"] = function () {
+DASApp_cmd.selectBase = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectInter = DASApp_cmd["select-inter"] = function () {
+DASApp_cmd.selectInter = function () {
 };
 
 //#TODO:
-DASApp_cmd.selectRegex = DASApp_cmd["select-regex"] = function () {
+DASApp_cmd.selectInterOlder = function () {
+};
+
+//#TODO:
+DASApp_cmd.selectInterNewer = function () {
+};
+
+//#TODO:
+DASApp_cmd.selectPartner = function () {
+};
+
+//#TODO:
+DASApp_cmd.selectRegex = function () {
 };
 
 DASApp_cmd.deselect = function () {
@@ -173,53 +189,73 @@ DASApp_cmd.deselect = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectBase = DASApp_cmd["deselect-base"] = function () {
+DASApp_cmd.deselectBase = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectInter = DASApp_cmd["deselect-inter"] = function () {
+DASApp_cmd.deselectInter = function () {
 };
 
 //#TODO:
-DASApp_cmd.deselectRegex = DASApp_cmd["deselect-regex"] = function () {
+DASApp_cmd.deselectInterOlder = function () {
 };
 
 //#TODO:
-DASApp_cmd.setClear = DASApp_cmd["set-clear"] = function () {
+DASApp_cmd.deselectInterNewer = function () {
+};
+
+//#TODO:
+DASApp_cmd.deselectPartner = function () {
+};
+
+//#TODO:
+DASApp_cmd.deselectRegex = function () {
+};
+
+//#TODO:
+DASApp_cmd.setClear = function () {
   this.state.set.clear();
 };
 
-DASApp_cmd.setStash = DASApp_cmd["set-stash"] = function (key) {
+DASApp_cmd.setStash = function (key) {
   this.state.stashSet[key] = this.this.state.set;
 };
 
-DASApp_cmd.setUnstash = DASApp_cmd["set-unstash"] = function (key) {
+DASApp_cmd.setUnstash = function (key) {
   this.this.state.set = this.state.stashSet[key];
   delete this.state.stashSet[key];
 };
 
 //#TODO:
-DASApp_cmd.copyFrom = DASApp_cmd["copy-from"] = DASApp_cmd["cpf"] = DASApp_cmd["pull"] = function (key) {
+DASApp_cmd.copyFrom = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.copyTo = DASApp_cmd["copy-to"] = DASApp_cmd["cpt"] = DASApp_cmd["push"] = function (key) {
+DASApp_cmd.copyTo = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.moveFrom = DASApp_cmd["move-from"] = DASApp_cmd["mvf"] = DASApp_cmd["take"] = function (key) {
+DASApp_cmd.moveFrom = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.moveTo = DASApp_cmd["move-to"] = DASApp_cmd["mvt"] = DASApp_cmd["give"] = function (key) {
+DASApp_cmd.moveTo = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.remove = DASApp_cmd["rmf"] = function (key) {
+DASApp_cmd.remove = function (key) {
 };
 
 //#TODO:
-DASApp_cmd.removeAt = DASApp_cmd["rmt"] = function (key) {
+DASApp_cmd.removeAt = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.touch = function (key) {
+};
+
+//#TODO:
+DASApp_cmd.touchAt = function (key) {
 };
 
 /* DASApp command alias */
