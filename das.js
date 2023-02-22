@@ -6,10 +6,48 @@
 'use strict';
 
 const process = require('process');
+const path = require('path');
+const fs = require('fs');
 
 
 /**
- * Core Class.
+ * File system IO Handler (helper)
+ */
+var _join = path.join;
+var _relative = path.relative;
+function _tree(dirPath) {
+  var out = [];
+
+  var ls = fs.readdirSync(dirPath, { withFileTypes: true });
+  var curPath;
+  ls.forEach(function (dirent) {
+    curPath = _join(dirPath, dirent.name)
+    if (dirent.isDirectory()) {
+      out.push(curPath);
+      out = out.concat(_tree(curPath))
+    }
+    else out.push(curPath);
+  });
+
+  return out;
+};
+
+const FSHandler = {
+  tree: _tree,
+  massRelative: function (fromPath, toPaths) {
+    return toPaths.map(function (filePath) {
+      return _relative(fromPath, filePath);
+    });
+  },
+  treeDir: function (dirPath) {
+    console.log("dirPath:", dirPath)
+    return this.massRelative(dirPath, this.tree(dirPath))
+  }
+};
+
+
+/**
+ * Core Class
  */
 
 function DAS(uriToDirectory) {
@@ -30,12 +68,14 @@ DAS_proto.select = function () {
     this.selectOne(arguments[i]);
   };
 };
+DAS_proto.select.expectedLength = -1;
 
 DAS_proto.deselect = function () {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.deselectOne(arguments[i]);
   };
 };
+DAS_proto.select.deselect = -1;
 
 DAS_proto.clear = function () {
   this.set = {};
@@ -48,7 +88,7 @@ function DASdirectory(uriToDirectory) {
   if (!uriToDirectory) uriToDirectory = process.cwd();
   this.uri = uriToDirectory;
   this.type = 'directory-as-set';
-  this.path = null;
+  this.path = uriToDirectory;
 };
 
 
@@ -61,11 +101,13 @@ function DASAppState(data) {
   this.isStateful = true;
   this.isDryrun = false;
   this.anchorDir = null;
-  this.alias = {};
-  this.base = new DASdirectory(data.base);
-  this.partner = new DASdirectory(data.partner);
+
   this.set = new DAS();
   this.stashSet = {};
+
+  this.alias = {};
+  this.setBase(data.base); // this.base = new DASdirectory(data.base);
+  this.setPartner(data.partner); // this.partner = new DASdirectory(data.partner);
 };
 const DASAppState_proto = DASAppState.prototype;
 
@@ -104,7 +146,7 @@ DASApp_proto.init = function () {
 //#TODO:
 DASApp_proto.state = function () {
   console.dir(this._state, { depth: null })
-
+  console.log(FSHandler.treeDir(this._state.base.path));
 };
 
 DASApp_proto.stateful = function () {
@@ -130,6 +172,7 @@ DASApp_proto.clean = function () {
 
 //#TODO:
 DASApp_proto.tree = function () {
+  // treeDir
 };
 
 DASApp_proto.base = function (inputString) {
@@ -291,6 +334,7 @@ function DASCmdRunner(app, args) {
   this.restArgs = args;
   this.curCmdName = null;
   this.queue = [];
+  this.lastOutput = null;
 };
 const DASCmdRunner_proto = DASCmdRunner.prototype;
 
@@ -367,23 +411,15 @@ DASCmdRunner_proto.giveBackArg = function () {
   return _.unshift.apply(_, arguments);
 };
 
-DASCmdRunner_proto.cmdParserTypeMap = {
-  // Default 0
-  "base": 1,
-  "partner": 1,
-  "alias": 1,
-  "selectRegex": 1,
-  "deselectRegex": 1,
-  "setStash": 1,
-  "setUnstash": 1,
-  "select": -1,
-  "deselect": -1,
-};
+DASCmdRunner_proto.getCmdMaxNoParams = function (cmd) {
+  if (cmd in this.app) {
+    var fn = this.app[cmd]
+    return fn.expectedLength !== undefined
+      ? fn.expectedLength
+      : fn.length;
+  };
 
-DASCmdRunner_proto.getCmdMaxNoParams = function (cmdName) {
-  var numberOfParam = this.cmdParserTypeMap[cmdName];
-  if (numberOfParam === undefined) numberOfParam = 0;
-  return numberOfParam;
+  return 0;
 };
 
 DASCmdRunner_proto.parseNext = function (maxNoParams) {
@@ -419,10 +455,10 @@ DASCmdRunner_proto.exec = function () {
 
   var app = this.app, queue = this.queue, curCmd;
   while ((curCmd = queue.shift()) !== undefined) {
-    app[curCmd.cmd].apply(app, curCmd.args)
+    this.lastOutput = app[curCmd.cmd].apply(app, curCmd.args)
   };
 
-  return 123;
+  return this.lastOutput;
 };
 
 /**
@@ -432,10 +468,12 @@ function createApp() {
   return new DASApp();
 };
 
-exports = module.exports = createApp;
+exports = module.exports = DASApp;
+exports.createApp = createApp;
 exports.DASApp = DASApp;
 exports.DASAppState = DASAppState;
 exports.DASdirectory = DASdirectory;
+exports.FSHandler = FSHandler;
 
 
 /**
