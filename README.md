@@ -15,10 +15,10 @@ curl -s https://raw.githubusercontent.com/thanhntmany/directory-as-set-js/main/d
 ```bash
 das [cmd...]
 ```
-**Required:** Device must be installed *nodejs* and *das-alias* before.
+**Required:** Device must be installed *nodejs* and *das* before.
 
-Clone this repository then run the below command to add '*das-alias*' into shell.
+Clone this repository then run the below command to add '*das*' into shell.
 
 ```bash
-source ./install-alias.sh
+sudo npm instal -g ./
 ```

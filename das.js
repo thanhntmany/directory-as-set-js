@@ -93,8 +93,6 @@ function DASApp() {
 };
 const DASApp_proto = DASApp.prototype;
 
-/* DASApp command */
-
 //#TODO:
 DASApp_proto.init = function () {
 
@@ -266,8 +264,9 @@ DASApp_proto.dryrun = function (type) {
 DASApp_proto.complete = function () {
 };
 
+
 /**
- * DASCmdRunner - Executing commandline
+ * DASCmdRunner - Executing commandline 
  */
 
 DASApp_proto.cmd = function (args) {
@@ -324,6 +323,7 @@ DASCmdRunner_proto.cmdAlias = {
   "tof": "touch",
   "tot": "touchAt",
 
+  "status": "state",
   "pull": "copyFrom",
   "push": "copyTo",
   "take": "moveFrom",
@@ -379,7 +379,6 @@ DASCmdRunner_proto.getCmdParserType = function (cmdName) {
 DASCmdRunner_proto["cmdParser_0"] = function () {
   this.queue.push({
     cmd: this.curCmdName,
-    args: null
   });
 };
 
@@ -410,8 +409,6 @@ DASCmdRunner_proto.parse = function () {
     this.curCmdName = this.normalizeCmd(cmdName);
     this.curParseType = this.getCmdParserType(cmdName);
     this["cmdParser_" + this.curParseType]();
-    console.log(this);
-
   };
 
 };
@@ -440,7 +437,7 @@ exports.DASdirectory = DASdirectory;
  * Run module as an independent application.
  */
 // Check if this module is being run directly or without entry script.
-if (require.main === module || require.main === undefined) {
+if (require.main === module || require.main === undefined || require.main.id === '.') {
   const app = createApp();
 
   var args = process.argv.slice(2);
@@ -448,6 +445,7 @@ if (require.main === module || require.main === undefined) {
   if (require.main === undefined) app.stateless();
 
   var cmdRunner = app.cmd(args);
-  console.dir(cmdRunner, { depth: null })
   cmdRunner.exec();
+
+  console.dir(cmdRunner, { depth: null })
 };

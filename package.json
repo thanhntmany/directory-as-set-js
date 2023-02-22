@@ -4,7 +4,11 @@
   "description": "directory-as-set.js",
   "main": "das.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cd test && node index.js"
+  },
+  "directories": {
+    "bin": "./bin",
+    "man": "./man"
   },
   "repository": {
     "type": "git",
