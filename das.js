@@ -45,6 +45,7 @@ DAS_proto.clear = function () {
  * DASdirectory
  */
 function DASdirectory(uriToDirectory) {
+  if (!uriToDirectory) uriToDirectory = process.cwd();
   this.uri = uriToDirectory;
   this.type = 'directory-as-set';
   this.path = null;
@@ -54,13 +55,15 @@ function DASdirectory(uriToDirectory) {
 /**
  * DASAppState
  */
-function DASAppState() {
+function DASAppState(data) {
+  if (!data) data = {};
+
   this.isStateful = true;
   this.isDryrun = false;
   this.anchorDir = null;
   this.alias = {};
-  this.base = new DASdirectory();
-  this.partner = new DASdirectory();
+  this.base = new DASdirectory(data.base);
+  this.partner = new DASdirectory(data.partner);
   this.set = new DAS();
   this.stashSet = {};
 };
@@ -89,7 +92,7 @@ DASAppState_proto.setPartner = function (inputString) {
  * DASApp
  */
 function DASApp() {
-  this.state = new DASAppState();
+  this._state = new DASAppState();
 };
 const DASApp_proto = DASApp.prototype;
 
@@ -100,15 +103,16 @@ DASApp_proto.init = function () {
 
 //#TODO:
 DASApp_proto.state = function () {
+  console.dir(this._state, { depth: null })
 
 };
 
 DASApp_proto.stateful = function () {
-  this.state.isStateful = true;
+  this._state.isStateful = true;
 };
 
 DASApp_proto.stateless = function () {
-  this.state.isStateful = false;
+  this._state.isStateful = false;
 };
 
 //#TODO:
@@ -124,8 +128,12 @@ DASApp_proto.clean = function () {
 DASApp_proto.clean = function () {
 };
 
+//#TODO:
+DASApp_proto.tree = function () {
+};
+
 DASApp_proto.base = function (inputString) {
-  this.state.setBase(inputString)
+  this._state.setBase(inputString)
 };
 
 //#TODO:
@@ -133,15 +141,15 @@ DASApp_proto.basePwd = function (inputString) {
 };
 
 DASApp_proto.partner = function (inputString) {
-  this.state.setPartner(inputString)
+  this._state.setPartner(inputString)
 };
 
 DASApp_proto.alias = function (inputString) {
-  this.state.alias(inputString, this.state.partner.uri)
+  this._state.alias(inputString, this._state.partner.uri)
 };
 
 DASApp_proto.aliasClear = function () {
-  this.state.aliasClear();
+  this._state.aliasClear();
 };
 
 //#TODO:
@@ -149,8 +157,9 @@ DASApp_proto.partnerPwd = function (inputString) {
 };
 
 DASApp_proto.select = function () {
-  var _set = this.state.set;
+  var _set = this._state.set;
   _set.select.apply(_set, arguments);
+  console.log(arguments);
 };
 
 //#TODO:
@@ -160,7 +169,7 @@ DASApp_proto.selectBase = function () {
 //#TODO:
 DASApp_proto.selectInter = function () {
 };
-
+``
 //#TODO:
 DASApp_proto.selectInterOlder = function () {
 };
@@ -178,7 +187,7 @@ DASApp_proto.selectRegex = function () {
 };
 
 DASApp_proto.deselect = function () {
-  var _set = this.state.set;
+  var _set = this._state.set;
   _set.deselect.apply(_set, arguments);
 };
 
@@ -208,16 +217,16 @@ DASApp_proto.deselectRegex = function () {
 
 //#TODO:
 DASApp_proto.setClear = function () {
-  this.state.set.clear();
+  this._state.set.clear();
 };
 
 DASApp_proto.setStash = function (key) {
-  this.state.stashSet[key] = this.this.state.set;
+  this._state.stashSet[key] = this.this._state.set;
 };
 
 DASApp_proto.setUnstash = function (key) {
-  this.this.state.set = this.state.stashSet[key];
-  delete this.state.stashSet[key];
+  this.this._state.set = this._state.stashSet[key];
+  delete this._state.stashSet[key];
 };
 
 //#TODO:
@@ -257,7 +266,7 @@ DASApp_proto.nop = function (key) {
 };
 
 DASApp_proto.dryrun = function (type) {
-  this.state.isDryrun = (type.toLowerCase() === "on");
+  this._state.isDryrun = (type.toLowerCase() === "on");
 };
 
 //#TODO:
@@ -281,7 +290,6 @@ function DASCmdRunner(app, args) {
   this.app = app;
   this.restArgs = args;
   this.curCmdName = null;
-  this.curParseType = null;
   this.queue = [];
 };
 const DASCmdRunner_proto = DASCmdRunner.prototype;
@@ -345,6 +353,8 @@ DASCmdRunner_proto.normalizeCmd = function (cmd) {
   cmd = camelize(cmd);
   if (cmd in this.cmdAlias) cmd = this.cmdAlias[cmd];
   if (cmd in this.app) return cmd;
+
+  // #TODO: Adress undefined command here
   return "nop";
 };
 
@@ -370,45 +380,35 @@ DASCmdRunner_proto.cmdParserTypeMap = {
   "deselect": -1,
 };
 
-DASCmdRunner_proto.getCmdParserType = function (cmdName) {
+DASCmdRunner_proto.getCmdMaxNoParams = function (cmdName) {
   var numberOfParam = this.cmdParserTypeMap[cmdName];
   if (numberOfParam === undefined) numberOfParam = 0;
   return numberOfParam;
 };
 
-DASCmdRunner_proto["cmdParser_0"] = function () {
-  this.queue.push({
-    cmd: this.curCmdName,
-  });
-};
+DASCmdRunner_proto.parseNext = function (maxNoParams) {
 
-DASCmdRunner_proto["cmdParser_1"] = function () {
-  this.queue.push({
-    cmd: this.curCmdName,
-    args: [this.nextArg()],
-  });
-};
-
-DASCmdRunner_proto[["cmdParser_-1"]] = function () {
   var args = [], arg;
-  while ((arg = this.nextArg()) !== undefined) {
-    if (arg === "--") break;
-    args.push(arg);
-  };
+  while (
+    (maxNoParams <= 0 || args.length < maxNoParams)
+    && (arg = this.nextArg()) !== undefined
+    && arg !== "--"
+  ) args.push(arg);
 
   this.queue.push({
     cmd: this.curCmdName,
     args: args,
   });
+
 };
 
 DASCmdRunner_proto.parse = function () {
   var cmdName, parseType;
   while ((cmdName = this.nextArg()) !== undefined) {
+    if (cmdName === "--") continue;
 
     this.curCmdName = this.normalizeCmd(cmdName);
-    this.curParseType = this.getCmdParserType(cmdName);
-    this["cmdParser_" + this.curParseType]();
+    this.parseNext(this.getCmdMaxNoParams(this.curCmdName));
   };
 
 };
@@ -416,7 +416,12 @@ DASCmdRunner_proto.parse = function () {
 DASCmdRunner_proto.exec = function () {
 
   this.parse();
-  console.log(this.restArgs);
+
+  var app = this.app, queue = this.queue, curCmd;
+  while ((curCmd = queue.shift()) !== undefined) {
+    app[curCmd.cmd].apply(app, curCmd.args)
+  };
+
   return 123;
 };
 
@@ -441,11 +446,13 @@ if (require.main === module || require.main === undefined || require.main.id ===
   const app = createApp();
 
   var args = process.argv.slice(2);
+
+  // #TODO: retyping this line to clear meaning
   // Default run in stateless mode if run without entry script.
   if (require.main === undefined) app.stateless();
 
+  if (args.length === 0) args.push("status");
+
   var cmdRunner = app.cmd(args);
   cmdRunner.exec();
-
-  console.dir(cmdRunner, { depth: null })
 };
