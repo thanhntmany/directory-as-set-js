@@ -158,6 +158,7 @@ RPSet_proto.filter = function (rpSet) {
 };
 
 RPSet_proto.filterMatchRegex = function (pattern, flags) {
+  if (!flags) flags = 'g';
   var regex = new RegExp(pattern, flags);
   for (var rPath in this.set) {
     if (!rPath.match(regex)) this.deselectOne(rPath);
@@ -166,6 +167,7 @@ RPSet_proto.filterMatchRegex = function (pattern, flags) {
 };
 
 RPSet_proto.filterNotMatchRegex = function (pattern, flags) {
+  if (!flags) flags = 'g';
   var regex = new RegExp(pattern, flags);
   for (var rPath in this.set) {
     if (rPath.match(regex)) this.deselectOne(rPath);
@@ -300,11 +302,6 @@ DASApp_proto.showState = function () {
   return this;
 };
 
-//#TODO:
-DASApp_proto.ls = function () {
-  console.log("ls")
-};
-
 // Base
 DASApp_proto.setBase = function (inputString) {
   this.base = new DASdirectory(this.realia(inputString));
@@ -349,6 +346,10 @@ DASApp_proto.getPartnerSection = function () {
     .filter(this.base.treeDir(this.relativePath));
 };
 
+//#TODO:
+DASApp_proto.ls = function () {
+  return this.selectedSet
+};
 
 // Selection
 DASApp_proto.select = function () {
@@ -378,8 +379,9 @@ DASApp_proto.selectPartner = function () {
   return this.selectSet(this.getPartnerSection());
 };
 
-//#TODO:
 DASApp_proto.selectRegex = function (pattern, flags) {
+  console.log("pattern:", pattern);
+  return this.selectedSet.filterMatchRegex(pattern, flags);
 };
 
 DASApp_proto.deselect = function () {
@@ -409,8 +411,8 @@ DASApp_proto.deselectPartner = function () {
   return this.deselectSet(this.getPartnerSection());
 };
 
-//#TODO:
-DASApp_proto.deselectRegex = function () {
+DASApp_proto.deselectRegex = function (pattern, flags) {
+  return this.selectedSet.filterNotMatchRegex(pattern, flags);
 };
 
 //#TODO:
