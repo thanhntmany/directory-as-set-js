@@ -188,7 +188,7 @@ DASAppState_proto.toJSON = function () {
     alias: this.alias,
 
     base: this.base.toJSON(),
-    partner: this.base.toJSON(),
+    partner: this.partner.toJSON(),
   };
 };
 
