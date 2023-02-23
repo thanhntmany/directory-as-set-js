@@ -209,7 +209,6 @@ function DASApp(data) {
   this.setBase(data.base); // this.base = new DASdirectory(data.base);
   this.setPartner(data.partner); // this.partner = new DASdirectory(data.partner);
 
-  this.cwd = process.cwd();
   this.relativePath = null;
 };
 const DASApp_proto = DASApp.prototype;
@@ -258,7 +257,7 @@ DASApp_proto.loadState = function (anchorDir) {
   var data = JSON.parse(_readFileSync(stateFile, 'utf8'));
   this.constructor.call(this, data);
 
-  this.relativePath = _relative(this.base.path, anchorDir || process.cwd());
+  this.relativePath = _relative(this.base.path, process.cwd());
 };
 
 //#TODO: convert path to relative form
