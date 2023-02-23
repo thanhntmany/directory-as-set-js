@@ -199,8 +199,6 @@ DASdirectory_proto.inter = function (partnerPath, relativePath) {
 function DASApp(data) {
   if (data === undefined) data = {};
 
-  this.isStateful = true;
-
   this.isDryrun = data.isDryrun || false;
   this.anchorDir = data.anchorDir || null;
 
@@ -265,23 +263,11 @@ DASApp_proto.loadState = function (anchorDir) {
 
 //#TODO: convert path to relative form
 DASApp_proto.saveState = function (anchorDir) {
-  if (anchorDir) this.anchorDir = anchorDir;
-  if (!this.anchorDir) this.anchorDir = this.findAnchor();
+  if (anchorDir !== undefined) this.anchorDir = anchorDir;
+  if (!this.anchorDir) return;
 
   var stateFile = this.getStateFilePath(anchorDir);
-  if (!_existsSync(stateFile)) return;
-
   _writeFileSync(stateFile, JSON.stringify(this, null, 4));
-};
-
-
-// Operations
-DASApp_proto.stateful = function () {
-  this.isStateful = true;
-};
-
-DASApp_proto.stateless = function () {
-  this.isStateful = false;
 };
 
 //#TODO:
@@ -482,9 +468,6 @@ DASCmdRunner_proto.cmdAlias = {
   "getCmd": "nop",
   "exec": "nop",
 
-  "sf": "stateful",
-  "sl": "stateless",
-  
   "base": "setBase",
   "partner": "setPartner",
 
@@ -497,7 +480,7 @@ DASCmdRunner_proto.cmdAlias = {
   "in": "selectInterNewer",
   "p": "selectPartner",
   "r": "selectRegex",
-  
+
   "d": "deselect",
   "db": "deselectBase",
   "di": "deselectInter",
@@ -630,23 +613,13 @@ exports.FSHandler = FSHandler;
  */
 // Check if this module is being run directly or without entry script.
 if (require.main === module || require.main === undefined || require.main.id === '.') {
-  const app = createApp();
-
   var args = process.argv.slice(2);
 
-  // #TODO: retyping this line to clear meaning
-  // Default run in stateless mode if run by blob script.
-  if (require.main === undefined) app.stateless();
-  if (args[0] === 'stateless') {
-    app.stateless();
-    args.shift();
-  };
-
-  if (app.isStateful) app.loadState();
+  const app = createApp();
+  app.loadState();
 
   if (args.length === 0) args.push("status");
-  var cmdRunner = app.cmd(args);
-  console.log(cmdRunner.exec());
+  console.log(app.cmd(args).exec());
 
-  if (app.isStateful) app.saveState();
+  if (app.anchorDir) app.saveState();
 };
