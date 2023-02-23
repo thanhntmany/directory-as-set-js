@@ -15,7 +15,12 @@ const fs = require('fs');
  */
 var _join = path.join;
 var _relative = path.relative;
+var _dirname = path.dirname;
+var _resolve = path.resolve;
 var _readdirSync = fs.readdirSync;
+var _readFileSync = fs.readFileSync;
+var _writeFileSync = fs.writeFileSync;
+var _existsSync = fs.existsSync;
 function _tree(dirPath) {
   var out = [];
 
@@ -42,6 +47,22 @@ const FSHandler = {
   },
   treeDir: function (dirPath) {
     return this.massRelative(dirPath, this.tree(dirPath))
+  },
+  findFileInAncestor: function (findPath, dirPath) {
+    if (dirPath === undefined) dirPath = process.cwd();
+    dirPath = _resolve(dirPath);
+    var p, _dirPath;
+
+    do {
+      p = _join(dirPath, findPath);
+      if (_existsSync(p)) return dirPath;
+
+      _dirPath = dirPath;
+      dirPath = _dirname(dirPath);
+    }
+    while (dirPath !== _dirPath)
+
+    return null;
   }
 };
 
@@ -51,11 +72,20 @@ const FSHandler = {
  */
 function RPSet(data) {
   this.set = {};
-  if (Array.isArray(data)) this.fromArray(data);
+
+  if (Array.isArray(data)) {
+    this.fromArray(data)
+  }
+  else this.join(data);
+
 };
 const RPSet_proto = RPSet.prototype;
 
 RPSet_proto.defaultValue = {}
+
+RPSet_proto.toJSON = function () {
+  return this.set;
+};
 
 RPSet_proto.fromArray = function (array) {
   this.select.apply(this, array);
@@ -110,10 +140,14 @@ RPSet.fromArray = function (arr) {
 function DASdirectory(uriToDirectory) {
   if (!uriToDirectory) uriToDirectory = process.cwd();
   // #TODO:
+  this.uri = uriToDirectory;
   this.type = 'directory-as-set';
   this.path = path.resolve(uriToDirectory);
 };
 const DASdirectory_proto = DASdirectory.prototype;
+DASdirectory_proto.toJSON = function () {
+  return this.uri;
+};
 
 DASdirectory_proto.ls = function () {
   return RPSet.fromArray(_readdirSync(this.path));
@@ -126,17 +160,73 @@ function DASAppState(data) {
   if (!data) data = {};
 
   this.isStateful = true;
-  this.isDryrun = false;
-  this.anchorDir = null;
+  this.isDryrun = data.isDryrun || false;
+  this.anchorDir = data.anchorDir || null;
 
-  this.set = new RPSet();
+  this.set = new RPSet(data.set);
   this.stashSet = {};
 
-  this.alias = {};
+  this.alias = data.alias || {};
   this.setBase(data.base); // this.base = new DASdirectory(data.base);
   this.setPartner(data.partner); // this.partner = new DASdirectory(data.partner);
 };
+
 const DASAppState_proto = DASAppState.prototype;
+
+DASAppState_proto.toJSON = function () {
+  return {
+    isDryrun: this.isDryrun,
+    anchorDir: this.anchorDir,
+
+    set: this.set.toJSON(),
+    stashSet: Object.fromEntries(Object.entries(this.stashSet).map(function (s) {
+      var out = {};
+      out[s[0]] = s[1].toJSON();
+      return out;
+    })),
+    alias: this.alias,
+
+    base: this.base.toJSON(),
+    partner: this.base.toJSON(),
+  };
+};
+
+DASAppState_proto.ANCHOR = ".das";
+DASAppState_proto.STATEFILE = "state.json";
+
+DASAppState_proto.initAnchor = function (dirPath) {
+  if (dirPath === undefined) dirPath = process.cwd();
+  dirPath = _join(dirPath, this.ANCHOR);
+
+  fs.mkdirSync(dirPath, { recursive: true });
+};
+
+DASAppState_proto.findAnchor = function (dirPath) {
+  return this.anchorDir = FSHandler.findFileInAncestor(this.ANCHOR, dirPath || process.cwd())
+};
+
+DASAppState_proto.load = function (anchorDir) {
+  if (!anchorDir) anchorDir = this.findAnchor();
+  if (!_existsSync(anchorDir)) return;
+
+  var stateFile = _join(anchorDir, this.ANCHOR, this.STATEFILE);
+  if (!_existsSync(stateFile)) return;
+
+  this.constructor.call(
+    this,
+    JSON.parse(_readFileSync(stateFile, 'utf8'))
+  )
+};
+
+DASAppState_proto.save = function (anchorDir) {
+  if (anchorDir) this.anchorDir = anchorDir;
+  if (!this.anchorDir) this.anchorDir = this.findAnchor();
+
+  _writeFileSync(
+    _join(this.anchorDir, this.ANCHOR, this.STATEFILE),
+    JSON.stringify(this)
+  );
+};
 
 DASAppState_proto.setAlias = function (key, value) {
   this.alias[key] = value;
@@ -170,11 +260,19 @@ DASApp_proto.init = function () {
 
 };
 
+DASApp_proto.loadState = function (anchorDir) {
+  this._state.load();
+};
+
 //#TODO:
 DASApp_proto.state = function () {
   console.dir(this._state, { depth: null })
   // console.log(FSHandler.treeDir(this._state.base.path));
-  console.log(this._state.base.ls());
+  console.log(JSON.stringify(this._state));
+};
+
+DASApp_proto.saveState = function () {
+  this._state.save();
 };
 
 DASApp_proto.stateful = function () {
@@ -479,13 +577,10 @@ DASCmdRunner_proto.parse = function () {
 };
 
 DASCmdRunner_proto.exec = function () {
-
   this.parse();
 
   var app = this.app, queue = this.queue, curCmd;
-  console.log(queue);
   while ((curCmd = queue.shift()) !== undefined) {
-    console.log("--> exec:", curCmd.cmd);
     this.lastOutput = app[curCmd.cmd].apply(app, curCmd.args)
   };
 
@@ -517,11 +612,18 @@ if (require.main === module || require.main === undefined || require.main.id ===
   var args = process.argv.slice(2);
 
   // #TODO: retyping this line to clear meaning
-  // Default run in stateless mode if run without entry script.
+  // Default run in stateless mode if run by blob script.
   if (require.main === undefined) app.stateless();
+  if (args[0] === 'stateless') {
+    app.stateless();
+    args.shift();
+  };
+
+  if (app._state.isStateful) app.loadState();
 
   if (args.length === 0) args.push("status");
-
   var cmdRunner = app.cmd(args);
   cmdRunner.exec();
+
+  if (app._state.isStateful) app.saveState();
 };
