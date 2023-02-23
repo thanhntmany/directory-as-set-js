@@ -349,13 +349,21 @@ DASApp_proto.showState = function () {
 // Base
 DASApp_proto.setBase = function (inputString) {
   this.base = new DASdirectory(this.realia(inputString));
-  return this.base.path;
+  return this.base;
+};
+
+DASApp_proto.getBase = function (inputString) {
+  return this.base;
 };
 
 // Partner
 DASApp_proto.setPartner = function (inputString) {
   this.partner = new DASdirectory(this.realia(inputString));
-  return this.partner.path;
+  return this.partner;
+};
+
+DASApp_proto.getPartner = function (inputString) {
+  return this.partner;
 };
 
 // Partner Alias
@@ -459,7 +467,6 @@ DASApp_proto.deselectRegex = function (pattern, flags) {
   return this.selectedSet.filterNotMatchRegex(pattern, flags);
 };
 
-//#TODO:
 DASApp_proto.clearSet = function () {
   return this.selectedSet.clear();
 };
@@ -479,8 +486,10 @@ DASApp_proto.clearStashSet = function () {
   this.stashSet = {};
 };
 
+// Operating with selected set of relative-path
 //#TODO:
 DASApp_proto.copyFrom = function (key) {
+
 };
 
 //#TODO:
@@ -559,8 +568,10 @@ DASCmdRunner_proto.cmdAlias = {
 
   "b": "setBase",
   "base": "setBase",
+  "gb": "getBase",
   "p": "setPartner",
   "partner": "setPartner",
+  "gp": "getPartner",
 
   "s": "select",
   "s-": "select",
