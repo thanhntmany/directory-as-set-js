@@ -40,14 +40,17 @@ function _tree(dirPath) {
 
 const FSHandler = {
   tree: _tree,
+
   massRelative: function (fromPath, toPaths) {
     return toPaths.map(function (filePath) {
       return _relative(fromPath, filePath);
     });
   },
+
   treeDir: function (dirPath) {
     return this.massRelative(dirPath, this.tree(dirPath))
   },
+
   findFileInAncestor: function (findPath, dirPath) {
     if (dirPath === undefined) dirPath = process.cwd();
     dirPath = _resolve(dirPath);
@@ -63,6 +66,14 @@ const FSHandler = {
     while (dirPath !== _dirPath)
 
     return null;
+  },
+
+  getIntersectionOf2Dir: function (baseDir, partnerDir) {
+    var outSet = RPSet.fromArray(this.treeDir(baseDir));
+    var pSet = RPSet.fromArray(this.treeDir(partnerDir));
+    outSet.inter(pSet);
+
+    return outSet;
   }
 };
 
@@ -74,10 +85,12 @@ function RPSet(data) {
   this.set = {};
 
   if (Array.isArray(data)) {
-    this.fromArray(data)
+    this.fromArray(data);
   }
-  else this.join(data);
-
+  else if (data instanceof this.constructor) {
+    this.join(data);
+  }
+  else this.joinObj(data);
 };
 const RPSet_proto = RPSet.prototype;
 
@@ -91,8 +104,8 @@ RPSet_proto.fromArray = function (array) {
   this.select.apply(this, array);
 };
 
-RPSet_proto.selectOne = function (inputString) {
-  this.set[inputString] = this.defaultValue;
+RPSet_proto.selectOne = function (inputString, value) {
+  this.set[inputString] = value || null;
 };
 
 RPSet_proto.select = function () {
@@ -105,24 +118,32 @@ RPSet_proto.deselectOne = function (inputString) {
   delete this.set[inputString];
 };
 
-RPSet_proto.deselect = function () {
+RPSet_proto.deselect = function (rpSet) {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.deselectOne(arguments[i]);
   };
 };
 
-RPSet_proto.join = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    Object.assign(this.set, arguments[i]);
+RPSet_proto.join = function (rpSet) {
+  Object.assign(this.set, rpSet.set);
+};
+
+RPSet_proto.joinObj = function (setObj) {
+  Object.assign(this.set, setObj);
+};
+
+RPSet_proto.inter = function (rpSet) {
+  var pSet = rpSet.set;
+  for (var rPath in this.set) {
+    if (!pSet.hasOwnProperty(rPath)) this.deselectOne(rPath);
   };
 };
 
 RPSet_proto.filter = function () {
   for (var i = 0, l = arguments.length; i < l; i++) {
-    Object.keys(arguments[i])
-      .forEach(
-        function (key) { this.deselectOne(key) },
-        this);
+    Object.keys(arguments[i]).forEach(
+      function (key) { this.deselectOne(key) },
+      this);
   };
 };
 
@@ -150,8 +171,16 @@ DASdirectory_proto.toJSON = function () {
   return this.uri;
 };
 
-DASdirectory_proto.ls = function () {
-  return RPSet.fromArray(_readdirSync(this.path));
+DASdirectory_proto.ls = function (pelativePath) {
+  return RPSet.fromArray(_readdirSync(_join(this.path, pelativePath)));
+};
+
+DASdirectory_proto.inter = function (partnerPath, pelativePath) {
+  if (!pelativePath) pelativePath = ".";
+  return FSHandler.getIntersectionOf2Dir(
+    _join(this.path, pelativePath),
+    _join(partnerPath, pelativePath),
+  );
 };
 
 /**
@@ -331,8 +360,10 @@ DASApp_proto.select.expectedLength = -1;
 DASApp_proto.selectBase = function () {
 };
 
-//#TODO:
 DASApp_proto.selectInter = function () {
+  this._state.set.join(
+    this._state.base.inter(this._state.partner.path)
+  );
 };
 ``
 //#TODO:
