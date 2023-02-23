@@ -285,41 +285,32 @@ DASAppState_proto.setPartner = function (inputString) {
  * DASApp
  */
 function DASApp() {
-  this._state = new DASAppState();
+  this.state = new DASAppState();
   this.cwd = process.cwd();
   this.relativePath = null;
 };
 const DASApp_proto = DASApp.prototype;
 
-//#TODO:
-DASApp_proto.init = function () {
-
-};
-
 DASApp_proto.loadState = function (anchorDir) {
-  this._state.load();
-  this.refreshRelativePath();
-};
-
-DASApp_proto.refreshRelativePath = function (toPath) {
-  this.relativePath = _relative(this.getBase().path, toPath || process.cwd());
+  this.state.load(anchorDir);
+  this.relativePath = _relative(this.getBase().path, anchorDir || process.cwd());
 };
 
 //#TODO:
-DASApp_proto.state = function () {
+DASApp_proto.showState = function () {
   console.dir(this, { depth: null })
 };
 
 DASApp_proto.saveState = function () {
-  this._state.save();
+  this.state.save();
 };
 
 DASApp_proto.stateful = function () {
-  this._state.isStateful = true;
+  this.state.isStateful = true;
 };
 
 DASApp_proto.stateless = function () {
-  this._state.isStateful = false;
+  this.state.isStateful = false;
 };
 
 //#TODO:
@@ -338,11 +329,11 @@ DASApp_proto.ls = function () {
 
 // Base
 DASApp_proto.setBase = function (inputString) {
-  this._state.setBase(inputString)
+  this.state.setBase(inputString)
 };
 
 DASApp_proto.getBase = function () {
-  return this._state.base;
+  return this.state.base;
 };
 
 DASApp_proto.basePath = function () {
@@ -351,11 +342,11 @@ DASApp_proto.basePath = function () {
 
 // Partner
 DASApp_proto.setPartner = function (inputString) {
-  this._state.setPartner(inputString)
+  this.state.setPartner(inputString)
 };
 
 DASApp_proto.getPartner = function () {
-  return this._state.partner;
+  return this.state.partner;
 };
 
 DASApp_proto.partnerPath = function () {
@@ -364,12 +355,13 @@ DASApp_proto.partnerPath = function () {
 
 // Partner Alias
 DASApp_proto.alias = function (inputString) {
-  this._state.setAlias(inputString, this.getPartner().uri)
+  this.state.setAlias(inputString, this.getPartner().uri)
 };
 
 DASApp_proto.clearAlias = function () {
-  this._state.clearAlias();
+  this.state.clearAlias();
 };
+
 
 // Intersection Sections operations 
 DASApp_proto.getBaseSection = function () {
@@ -386,21 +378,17 @@ DASApp_proto.getPartnerSection = function () {
     .filter(this.getBase().treeDir(this.relativePath));
 };
 
-// State
-DASApp_proto.getState = function () {
-  return this._state()
-};
 
 // Selection
 DASApp_proto.select = function () {
-  var _set = this._state.set;
+  var _set = this.state.set;
   _set.select.apply(_set, arguments);
   console.log(arguments);
 };
 DASApp_proto.select.expectedLength = -1;
 
 DASApp_proto.getSelectedSet = function () {
-  return this._state.set;
+  return this.state.set;
 };
 
 DASApp_proto.selectSet = function (rpSet) {
@@ -424,7 +412,7 @@ DASApp_proto.selectRegex = function () {
 };
 
 DASApp_proto.deselect = function () {
-  var _set = this._state.set;
+  var _set = this.state.set;
   _set.deselect.apply(_set, arguments);
 };
 DASApp_proto.deselect.expectedLength = -1;
@@ -448,16 +436,16 @@ DASApp_proto.deselectRegex = function () {
 
 //#TODO:
 DASApp_proto.clearSet = function () {
-  this._state.set.clear();
+  this.state.set.clear();
 };
 
 DASApp_proto.setStash = function (key) {
-  this._state.stashSet[key] = this.this._state.set;
+  this.state.stashSet[key] = this.this._state.set;
 };
 
 DASApp_proto.setUnstash = function (key) {
-  this.this._state.set = this._state.stashSet[key];
-  delete this._state.stashSet[key];
+  this.this.state.set = this.state.stashSet[key];
+  delete this.state.stashSet[key];
 };
 
 //#TODO:
@@ -497,7 +485,7 @@ DASApp_proto.nop = function (key) {
 };
 
 DASApp_proto.dryrun = function (type) {
-  this._state.isDryrun = (type.toLowerCase() === "on");
+  this.state.isDryrun = (type.toLowerCase() === "on");
 };
 
 //#TODO:
@@ -563,7 +551,8 @@ DASCmdRunner_proto.cmdAlias = {
   "tof": "touch",
   "tot": "touchAt",
 
-  "status": "state",
+  "state": "showState",
+  "status": "showState",
   "pull": "copyFrom",
   "push": "copyTo",
   "take": "moveFrom",
@@ -683,11 +672,11 @@ if (require.main === module || require.main === undefined || require.main.id ===
     args.shift();
   };
 
-  if (app._state.isStateful) app.loadState();
+  if (app.state.isStateful) app.loadState();
 
   if (args.length === 0) args.push("status");
   var cmdRunner = app.cmd(args);
   cmdRunner.exec();
 
-  if (app._state.isStateful) app.saveState();
+  if (app.state.isStateful) app.saveState();
 };

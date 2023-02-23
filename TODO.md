@@ -19,3 +19,8 @@ DASApp_proto.deselectInterOlder = function () {
 //#TODO:
 DASApp_proto.deselectInterNewer = function () {
 };
+
+//#TODO:
+DASApp_proto.init = function () {
+
+};
