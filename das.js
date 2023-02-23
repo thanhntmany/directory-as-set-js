@@ -15,10 +15,11 @@ const fs = require('fs');
  */
 var _join = path.join;
 var _relative = path.relative;
+var _readdirSync = fs.readdirSync;
 function _tree(dirPath) {
   var out = [];
 
-  var ls = fs.readdirSync(dirPath, { withFileTypes: true });
+  var ls = _readdirSync(dirPath, { withFileTypes: true });
   var curPath;
   ls.forEach(function (dirent) {
     curPath = _join(dirPath, dirent.name)
@@ -40,7 +41,6 @@ const FSHandler = {
     });
   },
   treeDir: function (dirPath) {
-    console.log("dirPath:", dirPath)
     return this.massRelative(dirPath, this.tree(dirPath))
   }
 };
@@ -49,24 +49,30 @@ const FSHandler = {
 /**
  * Relative Path Set
  */
-function RPSet() {
+function RPSet(data) {
   this.set = {};
+  if (Array.isArray(data)) this.fromArray(data);
 };
 const RPSet_proto = RPSet.prototype;
 
-RPSet_proto.selectOne = function (inputString) {
-  this.set[inputString] = "smt";
+RPSet_proto.defaultValue = {}
+
+RPSet_proto.fromArray = function (array) {
+  this.select.apply(this, array);
 };
 
-RPSet_proto.deselectOne = function (inputString) {
-  delete this.set[inputString];
+RPSet_proto.selectOne = function (inputString) {
+  this.set[inputString] = this.defaultValue;
 };
 
 RPSet_proto.select = function () {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.selectOne(arguments[i]);
   };
+};
 
+RPSet_proto.deselectOne = function (inputString) {
+  delete this.set[inputString];
 };
 
 RPSet_proto.deselect = function () {
@@ -75,21 +81,43 @@ RPSet_proto.deselect = function () {
   };
 };
 
+RPSet_proto.join = function () {
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    Object.assign(this.set, arguments[i]);
+  };
+};
+
+RPSet_proto.filter = function () {
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    Object.keys(arguments[i])
+      .forEach(
+        function (key) { this.deselectOne(key) },
+        this);
+  };
+};
+
 RPSet_proto.clear = function () {
   this.set = {};
 };
 
+RPSet.fromArray = function (arr) {
+  return new this(arr);
+}
 
 /**
  * DASdirectory
  */
 function DASdirectory(uriToDirectory) {
   if (!uriToDirectory) uriToDirectory = process.cwd();
-  this.type = 'directory-as-set';
   // #TODO:
+  this.type = 'directory-as-set';
   this.path = path.resolve(uriToDirectory);
 };
+const DASdirectory_proto = DASdirectory.prototype;
 
+DASdirectory_proto.ls = function () {
+  return RPSet.fromArray(_readdirSync(this.path));
+};
 
 /**
  * DASAppState
@@ -145,7 +173,8 @@ DASApp_proto.init = function () {
 //#TODO:
 DASApp_proto.state = function () {
   console.dir(this._state, { depth: null })
-  console.log(FSHandler.treeDir(this._state.base.path));
+  // console.log(FSHandler.treeDir(this._state.base.path));
+  console.log(this._state.base.ls());
 };
 
 DASApp_proto.stateful = function () {
@@ -166,12 +195,8 @@ DASApp_proto.clean = function () {
 };
 
 //#TODO:
-DASApp_proto.clean = function () {
-};
-
-//#TODO:
-DASApp_proto.tree = function () {
-  // treeDir
+DASApp_proto.ls = function () {
+  console.log("ls")
 };
 
 DASApp_proto.base = function (inputString) {
@@ -413,8 +438,8 @@ DASCmdRunner_proto.giveBackArg = function () {
 };
 
 DASCmdRunner_proto.getCmdMaxNoParams = function (cmd) {
-  if (cmd in this.app) {
-    var fn = this.app[cmd]
+  var fn = this.app[cmd]
+  if (typeof fn === 'function') {
     return fn.expectedLength !== undefined
       ? fn.expectedLength
       : fn.length;
@@ -426,11 +451,14 @@ DASCmdRunner_proto.getCmdMaxNoParams = function (cmd) {
 DASCmdRunner_proto.parseNext = function (maxNoParams) {
 
   var args = [], arg;
-  while (
-    (maxNoParams <= 0 || args.length < maxNoParams)
-    && (arg = this.nextArg()) !== undefined
-    && arg !== "--"
-  ) args.push(arg);
+  if (maxNoParams < 0) {
+    while ((arg = this.nextArg()) !== undefined && arg !== "--")
+      args.push(arg);
+  }
+  else if (maxNoParams > 0) {
+    while (args.length < maxNoParams && (arg = this.nextArg()) !== undefined && arg !== "--")
+      args.push(arg);
+  };
 
   this.queue.push({
     cmd: this.curCmdName,
@@ -455,7 +483,9 @@ DASCmdRunner_proto.exec = function () {
   this.parse();
 
   var app = this.app, queue = this.queue, curCmd;
+  console.log(queue);
   while ((curCmd = queue.shift()) !== undefined) {
+    console.log("--> exec:", curCmd.cmd);
     this.lastOutput = app[curCmd.cmd].apply(app, curCmd.args)
   };
 
