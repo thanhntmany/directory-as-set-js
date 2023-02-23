@@ -208,6 +208,11 @@ function DASApp(data) {
 
   this.selectedSet = new RPSet(data.selectedSet);
   this.stashSet = {};
+  if (data.stashSet) {
+    for (var key in data.stashSet)
+      data.stashSet[key] = new RPSet(data.stashSet[key]);
+    this.stashSet = data.stashSet;
+  };
 
   this.alias = data.alias || {};
   this.setBase(data.base); // this.base = new DASdirectory(data.base);
@@ -223,18 +228,16 @@ DASApp_proto.toJSON = function () {
     anchorDir: this.anchorDir,
 
     selectedSet: this.selectedSet.toJSON(),
-    stashSet: Object.fromEntries(Object.entries(this.stashSet).map(function (s) {
-      var out = {};
-      out[s[0]] = s[1].toJSON();
-      return out;
-    })),
+    stashSet: Object.fromEntries(Object.entries(this.stashSet)
+      .map(function (s) { return [s[0], s[1].toJSON()] })
+    ),
 
     alias: this.alias,
     base: this.base.toJSON(),
     partner: this.partner.toJSON(),
   };
 };
-//#TODO:
+
 DASApp_proto.toString = function () {
   return JSON.stringify(this, null, 4);
 };
@@ -398,12 +401,18 @@ DASApp_proto.clearSet = function () {
 };
 
 DASApp_proto.stashSelectedSet = function (key) {
+  if (key === undefined) key = Object.keys(this.stashSet).length;
   this.stashSet[key] = this.selectedSet;
+  return key
 };
 
 DASApp_proto.unstashSelectedSet = function (key) {
   this.selectedSet = this.stashSet[key];
   delete this.stashSet[key];
+};
+
+DASApp_proto.clearStashSet = function () {
+  this.stashSet = {};
 };
 
 //#TODO:
@@ -528,8 +537,11 @@ DASCmdRunner_proto.cmdAlias = {
   "take": "moveFrom",
   "give": "moveTo",
   "dryrun": "setDryrunMode",
+
   "stash": "stashSelectedSet",
   "unstash": "unstashSelectedSet",
+  "clearstash": "clearStashSet",
+  "clss": "clearStashSet",  
 };
 
 DASCmdRunner_proto.cmdParsersMap = {
@@ -545,8 +557,8 @@ function camelize(str) {
 
 DASCmdRunner_proto.normalizeCmd = function (cmd) {
   cmd = camelize(cmd);
-  if (cmd in this.cmdAlias) cmd = this.cmdAlias[cmd];
-  if (cmd in this.app && this.app[cmd] instanceof Function ) return cmd;
+  if (cmd.toLowerCase() in this.cmdAlias) cmd = this.cmdAlias[cmd.toLowerCase()];
+  if (cmd in this.app && this.app[cmd] instanceof Function) return cmd;
 
   // #TODO: Adress undefined command here
   return "nop";
