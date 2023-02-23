@@ -225,8 +225,8 @@ DASApp_proto.toJSON = function () {
       out[s[0]] = s[1].toJSON();
       return out;
     })),
+    
     alias: this.alias,
-
     base: this.base.toJSON(),
     partner: this.partner.toJSON(),
   };
@@ -270,11 +270,9 @@ DASApp_proto.saveState = function (anchorDir) {
   _writeFileSync(stateFile, JSON.stringify(this, null, 4));
 };
 
-//#TODO:
 DASApp_proto.showState = function () {
-  console.dir(this, { depth: null })
+  return this;
 };
-
 
 //#TODO:
 DASApp_proto.ls = function () {
@@ -468,20 +466,23 @@ DASCmdRunner_proto.cmdAlias = {
   "getCmd": "nop",
   "exec": "nop",
 
+  "a": "alias",
+  "b": "setBase",
   "base": "setBase",
+  "p": "setPartner",
   "partner": "setPartner",
 
-  "a": "alias",
-
   "s": "select",
-  "b": "selectBase",
-  "i": "selectInter",
-  "io": "selectInterOlder",
-  "in": "selectInterNewer",
-  "p": "selectPartner",
-  "r": "selectRegex",
+  "s-": "select",
+  "sb": "selectBase",
+  "si": "selectInter",
+  "sio": "selectInterOlder",
+  "sin": "selectInterNewer",
+  "sp": "selectPartner",
+  "sr": "selectRegex",
 
   "d": "deselect",
+  "d-": "deselect",
   "db": "deselectBase",
   "di": "deselectInter",
   "dio": "deselectInterOlder",
