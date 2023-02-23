@@ -375,9 +375,7 @@ DASApp_proto.select = function () {
 };
 DASApp_proto.select.expectedLength = -1;
 
-//#TODO:
 DASApp_proto.selectBase = function () {
-  var base = this.getBase();
   this._state.set.join(
     this.getBase().treeDir(this.relativePath)
       .filter(this.getPartner().treeDir(this.relativePath))
@@ -389,7 +387,7 @@ DASApp_proto.selectInter = function () {
     this.getBase().inter(this.getPartner().path, this.relativePath)
   );
 };
-``
+
 //#TODO:
 DASApp_proto.selectInterOlder = function () {
 };
@@ -400,6 +398,10 @@ DASApp_proto.selectInterNewer = function () {
 
 //#TODO:
 DASApp_proto.selectPartner = function () {
+  this._state.set.join(
+    this.getPartner().treeDir(this.relativePath)
+      .filter(this.getBase().treeDir(this.relativePath))
+  );
 };
 
 //#TODO:
