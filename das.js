@@ -47,48 +47,47 @@ const FSHandler = {
 
 
 /**
- * Core Class
+ * Relative Path Set
  */
-
-function DAS(uriToDirectory) {
+function RPSet() {
   this.set = {};
 };
-const DAS_proto = DAS.prototype;
+const RPSet_proto = RPSet.prototype;
 
-DAS_proto.selectOne = function (inputString) {
-  if (!(inputString in this.set)) this.set[inputString] = {};
+RPSet_proto.selectOne = function (inputString) {
+  this.set[inputString] = "smt";
 };
 
-DAS_proto.deselectOne = function (inputString) {
+RPSet_proto.deselectOne = function (inputString) {
   delete this.set[inputString];
 };
 
-DAS_proto.select = function () {
+RPSet_proto.select = function () {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.selectOne(arguments[i]);
   };
-};
-DAS_proto.select.expectedLength = -1;
 
-DAS_proto.deselect = function () {
+};
+
+RPSet_proto.deselect = function () {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.deselectOne(arguments[i]);
   };
 };
-DAS_proto.select.deselect = -1;
 
-DAS_proto.clear = function () {
+RPSet_proto.clear = function () {
   this.set = {};
 };
+
 
 /**
  * DASdirectory
  */
 function DASdirectory(uriToDirectory) {
   if (!uriToDirectory) uriToDirectory = process.cwd();
-  this.uri = uriToDirectory;
   this.type = 'directory-as-set';
-  this.path = uriToDirectory;
+  // #TODO:
+  this.path = path.resolve(uriToDirectory);
 };
 
 
@@ -102,7 +101,7 @@ function DASAppState(data) {
   this.isDryrun = false;
   this.anchorDir = null;
 
-  this.set = new DAS();
+  this.set = new RPSet();
   this.stashSet = {};
 
   this.alias = {};
@@ -204,6 +203,7 @@ DASApp_proto.select = function () {
   _set.select.apply(_set, arguments);
   console.log(arguments);
 };
+DASApp_proto.select.expectedLength = -1;
 
 //#TODO:
 DASApp_proto.selectBase = function () {
@@ -233,6 +233,7 @@ DASApp_proto.deselect = function () {
   var _set = this._state.set;
   _set.deselect.apply(_set, arguments);
 };
+DASApp_proto.deselect.expectedLength = -1;
 
 //#TODO:
 DASApp_proto.deselectBase = function () {
