@@ -288,7 +288,6 @@ DASApp_proto.clean = function () {
   return this;
 };
 
-//#TODO: convert path to relative form
 DASApp_proto.loadState = function (anchorDir) {
   if (!anchorDir) anchorDir = this.findAnchor();
   if (!_existsSync(anchorDir)) return process.cwd();
@@ -297,18 +296,50 @@ DASApp_proto.loadState = function (anchorDir) {
   if (!_existsSync(stateFile)) return;
 
   var data = JSON.parse(_readFileSync(stateFile, 'utf8'));
+
+  data.alias = Object.fromEntries(Object.entries(data.alias).map(function (alia) {
+    alia[1] = _join(anchorDir, alia[1]);
+    return alia;
+  }));
+
+  data.anchorDir = anchorDir;
+  data.base = _join(anchorDir, data.base);
+  data.partner = _join(anchorDir, data.partner);
+
+  var cwd = process.cwd();
+  if (!cwd.startsWith(data.base)) {
+
+    var curBasePath = Object.values(data.alias)
+      .find(function (dirPath) { return cwd.startsWith(dirPath) });
+
+    if (curBasePath) {
+      if (curBasePath == data.partner) data.partner = data.base;
+      data.base = curBasePath;
+    };
+
+  };
+
   this.constructor.call(this, data);
 
   this.relativePath = _relative(this.base.path, process.cwd());
 };
 
-//#TODO: convert path to relative form
 DASApp_proto.saveState = function (anchorDir) {
   if (anchorDir !== undefined) this.anchorDir = anchorDir;
   if (!this.anchorDir) return;
 
   var stateFile = this.getStateFilePath(anchorDir);
-  if (_existsSync(_dirname(stateFile))) _writeFileSync(stateFile, JSON.stringify(this, null, 4));
+
+  var data = this.toJSON();
+  data.base = _relative(data.anchorDir, data.base);
+  data.partner = _relative(data.anchorDir, data.partner);
+
+  for (var ali in data.alias) {
+    data.alias[ali] = _relative(data.anchorDir, data.alias[ali]);
+  };
+
+  delete data.anchorDir;
+  if (_existsSync(_dirname(stateFile))) _writeFileSync(stateFile, JSON.stringify(data, null, 4));
 };
 
 DASApp_proto.showState = function () {
@@ -523,6 +554,7 @@ DASCmdRunner_proto.cmdAlias = {
   "exec": "nop",
 
   "a": "setAlias",
+  "ra": "realia",  
   "cas": "clearAlias",
 
   "b": "setBase",
@@ -574,7 +606,7 @@ DASCmdRunner_proto.cmdAlias = {
   "stash": "stashSelectedSet",
   "unstash": "unstashSelectedSet",
   "clearstash": "clearStashSet",
-  "clss": "clearStashSet",  
+  "clss": "clearStashSet",
 };
 
 DASCmdRunner_proto.cmdParsersMap = {
