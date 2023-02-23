@@ -336,6 +336,7 @@ DASApp_proto.ls = function () {
   console.log("ls")
 };
 
+// Base
 DASApp_proto.setBase = function (inputString) {
   this._state.setBase(inputString)
 };
@@ -344,10 +345,11 @@ DASApp_proto.getBase = function () {
   return this._state.base;
 };
 
-//#TODO:
-DASApp_proto.basePwd = function (inputString) {
+DASApp_proto.basePath = function () {
+  return this.getBase().path;
 };
 
+// Partner
 DASApp_proto.setPartner = function (inputString) {
   this._state.setPartner(inputString)
 };
@@ -356,6 +358,11 @@ DASApp_proto.getPartner = function () {
   return this._state.partner;
 };
 
+DASApp_proto.partnerPath = function () {
+  return this.getPartner().path;
+};
+
+// Partner Alias
 DASApp_proto.alias = function (inputString) {
   this._state.setAlias(inputString, this.getPartner().uri)
 };
@@ -364,10 +371,27 @@ DASApp_proto.clearAlias = function () {
   this._state.clearAlias();
 };
 
-//#TODO:
-DASApp_proto.partnerPwd = function (inputString) {
+// Intersection Sections operations 
+DASApp_proto.getBaseSection = function () {
+  return this.getBase().treeDir(this.relativePath)
+    .filter(this.getPartner().treeDir(this.relativePath));
 };
 
+DASApp_proto.getInterSection = function () {
+  return this.getBase().inter(this.getPartner().path, this.relativePath);
+};
+
+DASApp_proto.getPartnerSection = function () {
+  return this.getPartner().treeDir(this.relativePath)
+    .filter(this.getBase().treeDir(this.relativePath));
+};
+
+// State
+DASApp_proto.getState = function () {
+  return this._state()
+};
+
+// Selection
 DASApp_proto.select = function () {
   var _set = this._state.set;
   _set.select.apply(_set, arguments);
@@ -375,33 +399,24 @@ DASApp_proto.select = function () {
 };
 DASApp_proto.select.expectedLength = -1;
 
+DASApp_proto.getSelectedSet = function () {
+  return this._state.set;
+};
+
+DASApp_proto.selectSet = function (rpSet) {
+  this.getSelectedSet().join(rpSet)
+};
+
 DASApp_proto.selectBase = function () {
-  this._state.set.join(
-    this.getBase().treeDir(this.relativePath)
-      .filter(this.getPartner().treeDir(this.relativePath))
-  );
+  this.selectSet(this.getBaseSection());
 };
 
 DASApp_proto.selectInter = function () {
-  this._state.set.join(
-    this.getBase().inter(this.getPartner().path, this.relativePath)
-  );
+  this.selectSet(this.getInterSection());
 };
 
-//#TODO:
-DASApp_proto.selectInterOlder = function () {
-};
-
-//#TODO:
-DASApp_proto.selectInterNewer = function () {
-};
-
-//#TODO:
 DASApp_proto.selectPartner = function () {
-  this._state.set.join(
-    this.getPartner().treeDir(this.relativePath)
-      .filter(this.getBase().treeDir(this.relativePath))
-  );
+  this.selectSet(this.getPartnerSection());
 };
 
 //#TODO:
@@ -422,13 +437,6 @@ DASApp_proto.deselectBase = function () {
 DASApp_proto.deselectInter = function () {
 };
 
-//#TODO:
-DASApp_proto.deselectInterOlder = function () {
-};
-
-//#TODO:
-DASApp_proto.deselectInterNewer = function () {
-};
 
 //#TODO:
 DASApp_proto.deselectPartner = function () {
