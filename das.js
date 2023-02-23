@@ -140,6 +140,7 @@ RPSet.fromArray = function (arr) {
 function DASdirectory(uriToDirectory) {
   if (!uriToDirectory) uriToDirectory = process.cwd();
   // #TODO:
+  uriToDirectory = _resolve(uriToDirectory);
   this.uri = uriToDirectory;
   this.type = 'directory-as-set';
   this.path = path.resolve(uriToDirectory);
@@ -224,7 +225,7 @@ DASAppState_proto.save = function (anchorDir) {
 
   _writeFileSync(
     _join(this.anchorDir, this.ANCHOR, this.STATEFILE),
-    JSON.stringify(this)
+    JSON.stringify(this, null, 4)
   );
 };
 
@@ -232,7 +233,7 @@ DASAppState_proto.setAlias = function (key, value) {
   this.alias[key] = value;
 };
 
-DASAppState_proto.aliasClear = function () {
+DASAppState_proto.clearAlias = function () {
   this.alias = {};
 };
 
@@ -267,8 +268,6 @@ DASApp_proto.loadState = function (anchorDir) {
 //#TODO:
 DASApp_proto.state = function () {
   console.dir(this._state, { depth: null })
-  // console.log(FSHandler.treeDir(this._state.base.path));
-  console.log(JSON.stringify(this._state));
 };
 
 DASApp_proto.saveState = function () {
@@ -310,11 +309,11 @@ DASApp_proto.partner = function (inputString) {
 };
 
 DASApp_proto.alias = function (inputString) {
-  this._state.alias(inputString, this._state.partner.uri)
+  this._state.setAlias(inputString, this._state.partner.uri)
 };
 
-DASApp_proto.aliasClear = function () {
-  this._state.aliasClear();
+DASApp_proto.clearAlias = function () {
+  this._state.clearAlias();
 };
 
 //#TODO:
