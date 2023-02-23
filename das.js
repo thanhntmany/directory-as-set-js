@@ -17,7 +17,8 @@ var _join = path.join;
 var _relative = path.relative;
 var _dirname = path.dirname;
 var _resolve = path.resolve;
-var _lstatSync = fs.lstatSync;
+var _mkdirSync = fs.mkdirSync;
+var _rmdirSync = fs.rmdirSync;
 var _readdirSync = fs.readdirSync;
 var _readFileSync = fs.readFileSync;
 var _writeFileSync = fs.writeFileSync;
@@ -274,6 +275,18 @@ DASApp_proto.getStateFilePath = function (anchorDir) {
   return _join(anchorDir || this.anchorDir, this.ANCHOR, this.STATEFILE);
 };
 
+DASApp_proto.init = function () {
+  this.anchorDir = process.cwd();
+  var stateFile = this.getStateFilePath(this.anchorDir);
+  _mkdirSync(_dirname(stateFile), { recursive: true });
+  return this;
+};
+
+DASApp_proto.clean = function () {
+  var stateFile = this.getStateFilePath(this.anchorDir);
+  _rmdirSync(_dirname(stateFile), { force: true, recursive: true });
+  return this;
+};
 
 //#TODO: convert path to relative form
 DASApp_proto.loadState = function (anchorDir) {
@@ -295,7 +308,7 @@ DASApp_proto.saveState = function (anchorDir) {
   if (!this.anchorDir) return;
 
   var stateFile = this.getStateFilePath(anchorDir);
-  _writeFileSync(stateFile, JSON.stringify(this, null, 4));
+  if (_existsSync(_dirname(stateFile))) _writeFileSync(stateFile, JSON.stringify(this, null, 4));
 };
 
 DASApp_proto.showState = function () {
