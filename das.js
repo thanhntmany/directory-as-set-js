@@ -546,7 +546,7 @@ function camelize(str) {
 DASCmdRunner_proto.normalizeCmd = function (cmd) {
   cmd = camelize(cmd);
   if (cmd in this.cmdAlias) cmd = this.cmdAlias[cmd];
-  if (cmd in this.app) return cmd;
+  if (cmd in this.app && this.app[cmd] instanceof Function ) return cmd;
 
   // #TODO: Adress undefined command here
   return "nop";
