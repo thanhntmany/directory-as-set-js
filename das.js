@@ -100,6 +100,9 @@ RPSet_proto.defaultValue = {}
 RPSet_proto.toJSON = function () {
   return this.set;
 };
+RPSet_proto.toString = function () {
+  return Object.keys(this.toJSON()).join("\n")
+};
 
 RPSet_proto.fromArray = function (array) {
   this.select.apply(this, array);
@@ -173,6 +176,9 @@ const DASdirectory_proto = DASdirectory.prototype;
 DASdirectory_proto.toJSON = function () {
   return this.uri;
 };
+DASdirectory_proto.toString = function () {
+  return this.path;
+};
 
 DASdirectory_proto.ls = function (relativePath) {
   return RPSet.fromArray(_readdirSync(_join(this.path, relativePath || ".")));
@@ -188,31 +194,34 @@ DASdirectory_proto.inter = function (partnerPath, relativePath) {
 
 
 /**
- * DASAppState
+ * DASApp
  */
-function DASAppState(data) {
-  if (!data) data = {};
+function DASApp(data) {
+  if (data === undefined) data = {};
 
   this.isStateful = true;
+
   this.isDryrun = data.isDryrun || false;
   this.anchorDir = data.anchorDir || null;
 
-  this.set = new RPSet(data.set);
+  this.selectedSet = new RPSet(data.selectedSet);
   this.stashSet = {};
 
   this.alias = data.alias || {};
   this.setBase(data.base); // this.base = new DASdirectory(data.base);
   this.setPartner(data.partner); // this.partner = new DASdirectory(data.partner);
+
+  this.cwd = process.cwd();
+  this.relativePath = null;
 };
+const DASApp_proto = DASApp.prototype;
 
-const DASAppState_proto = DASAppState.prototype;
-
-DASAppState_proto.toJSON = function () {
+DASApp_proto.toJSON = function () {
   return {
     isDryrun: this.isDryrun,
     anchorDir: this.anchorDir,
 
-    set: this.set.toJSON(),
+    selectedSet: this.selectedSet.toJSON(),
     stashSet: Object.fromEntries(Object.entries(this.stashSet).map(function (s) {
       var out = {};
       out[s[0]] = s[1].toJSON();
@@ -224,76 +233,55 @@ DASAppState_proto.toJSON = function () {
     partner: this.partner.toJSON(),
   };
 };
+//#TODO:
+// DASApp_proto.toString = function () {};
 
-DASAppState_proto.ANCHOR = ".das";
-DASAppState_proto.STATEFILE = "state.json";
+// State handling
+DASApp_proto.ANCHOR = ".das";
+DASApp_proto.STATEFILE = "state.json";
 
-DASAppState_proto.initAnchor = function (dirPath) {
-  if (dirPath === undefined) dirPath = process.cwd();
-  dirPath = _join(dirPath, this.ANCHOR);
-
-  fs.mkdirSync(dirPath, { recursive: true });
+DASApp_proto.findAnchor = function (dirPath) {
+  return this.anchorDir = FSHandler.findFileInAncestor(this.ANCHOR, dirPath || process.cwd()) || process.cwd();
 };
 
-DASAppState_proto.findAnchor = function (dirPath) {
-  return this.anchorDir = FSHandler.findFileInAncestor(this.ANCHOR, dirPath || process.cwd())
+DASApp_proto.getStateFilePath = function (anchorDir) {
+  return _join(anchorDir || this.anchorDir, this.ANCHOR, this.STATEFILE);
 };
 
-DASAppState_proto.load = function (anchorDir) {
+
+//#TODO: convert path to relative form
+DASApp_proto.loadState = function (anchorDir) {
   if (!anchorDir) anchorDir = this.findAnchor();
-  if (!_existsSync(anchorDir)) return;
+  if (!_existsSync(anchorDir)) return process.cwd();
 
-  var stateFile = _join(anchorDir, this.ANCHOR, this.STATEFILE);
+  var stateFile = this.getStateFilePath(anchorDir);
   if (!_existsSync(stateFile)) return;
 
-  this.constructor.call(
-    this,
-    JSON.parse(_readFileSync(stateFile, 'utf8'))
-  )
+  var data = JSON.parse(_readFileSync(stateFile, 'utf8'));
+  this.constructor.call(this, data);
+
+  this.relativePath = _relative(this.base.path, anchorDir || process.cwd());
 };
 
-DASAppState_proto.save = function (anchorDir) {
+//#TODO: convert path to relative form
+DASApp_proto.saveState = function (anchorDir) {
   if (anchorDir) this.anchorDir = anchorDir;
   if (!this.anchorDir) this.anchorDir = this.findAnchor();
 
-  _writeFileSync(
-    _join(this.anchorDir, this.ANCHOR, this.STATEFILE),
-    JSON.stringify(this, null, 4)
-  );
-};
+  var stateFile = this.getStateFilePath(anchorDir);
+  if (!_existsSync(stateFile)) return;
 
-DASAppState_proto.setAlias = function (key, value) {
-  this.alias[key] = value;
-};
-
-DASAppState_proto.clearAlias = function () {
-  this.alias = {};
-};
-
-DASAppState_proto.setBase = function (inputString) {
-  if (inputString in this.alias) inputString = this.alias[inputString];
-  this.base = new DASdirectory(inputString);
-};
-
-DASAppState_proto.setPartner = function (inputString) {
-  if (inputString in this.alias) inputString = this.alias[inputString];
-  this.partner = new DASdirectory(inputString);
+  _writeFileSync(stateFile, JSON.stringify(this, null, 4));
 };
 
 
-/**
- * DASApp
- */
-function DASApp() {
-  this.state = new DASAppState();
-  this.cwd = process.cwd();
-  this.relativePath = null;
+// Operations
+DASApp_proto.stateful = function () {
+  this.isStateful = true;
 };
-const DASApp_proto = DASApp.prototype;
 
-DASApp_proto.loadState = function (anchorDir) {
-  this.state.load(anchorDir);
-  this.relativePath = _relative(this.getBase().path, anchorDir || process.cwd());
+DASApp_proto.stateless = function () {
+  this.isStateful = false;
 };
 
 //#TODO:
@@ -301,26 +289,6 @@ DASApp_proto.showState = function () {
   console.dir(this, { depth: null })
 };
 
-DASApp_proto.saveState = function () {
-  this.state.save();
-};
-
-DASApp_proto.stateful = function () {
-  this.state.isStateful = true;
-};
-
-DASApp_proto.stateless = function () {
-  this.state.isStateful = false;
-};
-
-//#TODO:
-DASApp_proto.clearCache = function () {
-  return this;
-};
-
-//#TODO:
-DASApp_proto.clean = function () {
-};
 
 //#TODO:
 DASApp_proto.ls = function () {
@@ -329,66 +297,58 @@ DASApp_proto.ls = function () {
 
 // Base
 DASApp_proto.setBase = function (inputString) {
-  this.state.setBase(inputString)
-};
-
-DASApp_proto.getBase = function () {
-  return this.state.base;
-};
-
-DASApp_proto.basePath = function () {
-  return this.getBase().path;
+  this.base = new DASdirectory(this.realia(inputString));
+  return this.base.path;
 };
 
 // Partner
 DASApp_proto.setPartner = function (inputString) {
-  this.state.setPartner(inputString)
-};
-
-DASApp_proto.getPartner = function () {
-  return this.state.partner;
-};
-
-DASApp_proto.partnerPath = function () {
-  return this.getPartner().path;
+  this.partner = new DASdirectory(this.realia(inputString));
+  return this.partner.path;
 };
 
 // Partner Alias
-DASApp_proto.alias = function (inputString) {
-  this.state.setAlias(inputString, this.getPartner().uri)
+DASApp_proto.setAlias = function (inputString) {
+  return this.alias[inputString] = this.partner.uri;
+};
+
+DASApp_proto.realia = function (inputString) {
+  return this.alias.hasOwnProperty(inputString)
+    ? this.alias[inputString]
+    : inputString;
 };
 
 DASApp_proto.clearAlias = function () {
-  this.state.clearAlias();
+  this.alias = {};
 };
 
 
 // Intersection Sections operations 
 DASApp_proto.getBaseSection = function () {
-  return this.getBase().treeDir(this.relativePath)
-    .filter(this.getPartner().treeDir(this.relativePath));
+  return this.base.treeDir(this.relativePath)
+    .filter(this.partner.treeDir(this.relativePath));
 };
 
 DASApp_proto.getInterSection = function () {
-  return this.getBase().inter(this.getPartner().path, this.relativePath);
+  return this.base.inter(this.partner.path, this.relativePath);
 };
 
 DASApp_proto.getPartnerSection = function () {
-  return this.getPartner().treeDir(this.relativePath)
-    .filter(this.getBase().treeDir(this.relativePath));
+  return this.partner.treeDir(this.relativePath)
+    .filter(this.base.treeDir(this.relativePath));
 };
 
 
 // Selection
 DASApp_proto.select = function () {
-  var _set = this.state.set;
+  var _set = this.selectedSet;
   _set.select.apply(_set, arguments);
   console.log(arguments);
 };
 DASApp_proto.select.expectedLength = -1;
 
 DASApp_proto.getSelectedSet = function () {
-  return this.state.set;
+  return this.selectedSet;
 };
 
 DASApp_proto.selectSet = function (rpSet) {
@@ -412,7 +372,7 @@ DASApp_proto.selectRegex = function () {
 };
 
 DASApp_proto.deselect = function () {
-  var _set = this.state.set;
+  var _set = this.selectedSet;
   _set.deselect.apply(_set, arguments);
 };
 DASApp_proto.deselect.expectedLength = -1;
@@ -436,16 +396,16 @@ DASApp_proto.deselectRegex = function () {
 
 //#TODO:
 DASApp_proto.clearSet = function () {
-  this.state.set.clear();
+  this.selectedSet.clear();
 };
 
-DASApp_proto.setStash = function (key) {
-  this.state.stashSet[key] = this.this._state.set;
+DASApp_proto.stashSelectedSet = function (key) {
+  this.stashSet[key] = this.selectedSet;
 };
 
-DASApp_proto.setUnstash = function (key) {
-  this.this.state.set = this.state.stashSet[key];
-  delete this.state.stashSet[key];
+DASApp_proto.unstashSelectedSet = function (key) {
+  this.selectedSet = this.stashSet[key];
+  delete this.stashSet[key];
 };
 
 //#TODO:
@@ -484,8 +444,8 @@ DASApp_proto.nop = function (key) {
   // Do nothing
 };
 
-DASApp_proto.dryrun = function (type) {
-  this.state.isDryrun = (type.toLowerCase() === "on");
+DASApp_proto.setDryrunMode = function (isDryrun) {
+  this.isDryrun = (isDryrun.toLowerCase() === "on");
 };
 
 //#TODO:
@@ -522,19 +482,22 @@ DASCmdRunner_proto.cmdAlias = {
   "getCmd": "nop",
   "exec": "nop",
 
-  "i": "init",
   "sf": "stateful",
   "sl": "stateless",
-  "b": "base",
-  "p": "partner",
+  
+  "base": "setBase",
+  "partner": "setPartner",
+
   "a": "alias",
+
   "s": "select",
-  "sb": "selectBase",
-  "si": "selectInter",
-  "sio": "selectInterOlder",
-  "sin": "selectInterNewer",
-  "sp": "selectPartner",
-  "sr": "selectRegex",
+  "b": "selectBase",
+  "i": "selectInter",
+  "io": "selectInterOlder",
+  "in": "selectInterNewer",
+  "p": "selectPartner",
+  "r": "selectRegex",
+  
   "d": "deselect",
   "db": "deselectBase",
   "di": "deselectInter",
@@ -542,6 +505,7 @@ DASCmdRunner_proto.cmdAlias = {
   "din": "deselectInterNewer",
   "dp": "deselectPartner",
   "dr": "deselectRegex",
+
   "cpf": "copyFrom",
   "cpt": "copyTo",
   "mvf": "moveFrom",
@@ -551,12 +515,19 @@ DASCmdRunner_proto.cmdAlias = {
   "tof": "touch",
   "tot": "touchAt",
 
+  "older": "selectInterOlder",
+  "newer": "selectInterNewer",
+
   "state": "showState",
   "status": "showState",
+
   "pull": "copyFrom",
   "push": "copyTo",
   "take": "moveFrom",
   "give": "moveTo",
+  "dryrun": "setDryrunMode",
+  "stash": "stashSelectedSet",
+  "unstash": "unstashSelectedSet",
 };
 
 DASCmdRunner_proto.cmdParsersMap = {
@@ -650,7 +621,6 @@ function createApp() {
 exports = module.exports = DASApp;
 exports.createApp = createApp;
 exports.DASApp = DASApp;
-exports.DASAppState = DASAppState;
 exports.DASdirectory = DASdirectory;
 exports.FSHandler = FSHandler;
 
@@ -672,11 +642,11 @@ if (require.main === module || require.main === undefined || require.main.id ===
     args.shift();
   };
 
-  if (app.state.isStateful) app.loadState();
+  if (app.isStateful) app.loadState();
 
   if (args.length === 0) args.push("status");
   var cmdRunner = app.cmd(args);
-  cmdRunner.exec();
+  console.log(cmdRunner.exec());
 
-  if (app.state.isStateful) app.saveState();
+  if (app.isStateful) app.saveState();
 };

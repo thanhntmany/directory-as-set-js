@@ -24,3 +24,9 @@ DASApp_proto.deselectInterNewer = function () {
 DASApp_proto.init = function () {
 
 };
+
+
+//#TODO:
+DASApp_proto.clean = function () {
+};
+
