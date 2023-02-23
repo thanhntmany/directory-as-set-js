@@ -480,7 +480,9 @@ DASCmdRunner_proto.cmdAlias = {
   "getCmd": "nop",
   "exec": "nop",
 
-  "a": "alias",
+  "a": "setAlias",
+  "cas": "clearAlias",
+
   "b": "setBase",
   "base": "setBase",
   "p": "setPartner",
