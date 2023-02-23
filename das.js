@@ -116,6 +116,7 @@ RPSet_proto.select = function () {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.selectOne(arguments[i]);
   };
+  return this;
 };
 
 RPSet_proto.deselectOne = function (inputString) {
@@ -126,10 +127,12 @@ RPSet_proto.deselect = function (rpSet) {
   for (var i = 0, l = arguments.length; i < l; i++) {
     this.deselectOne(arguments[i]);
   };
+  return this;
 };
 
 RPSet_proto.join = function (rpSet) {
   Object.assign(this.set, rpSet.set);
+  return this;
 };
 
 RPSet_proto.joinObj = function (setObj) {
@@ -154,6 +157,7 @@ RPSet_proto.filter = function (rpSet) {
 
 RPSet_proto.clear = function () {
   this.set = {};
+  return this;
 };
 
 RPSet.fromArray = function (arr) {
@@ -224,14 +228,16 @@ DASApp_proto.toJSON = function () {
       out[s[0]] = s[1].toJSON();
       return out;
     })),
-    
+
     alias: this.alias,
     base: this.base.toJSON(),
     partner: this.partner.toJSON(),
   };
 };
 //#TODO:
-// DASApp_proto.toString = function () {};
+DASApp_proto.toString = function () {
+  return JSON.stringify(this, null, 4);
+};
 
 // State handling
 DASApp_proto.ANCHOR = ".das";
@@ -313,7 +319,8 @@ DASApp_proto.getBaseSection = function () {
 };
 
 DASApp_proto.getInterSection = function () {
-  return this.base.inter(this.partner.path, this.relativePath);
+  return this.base
+    .inter(this.partner.path, this.relativePath);
 };
 
 DASApp_proto.getPartnerSection = function () {
@@ -324,30 +331,30 @@ DASApp_proto.getPartnerSection = function () {
 
 // Selection
 DASApp_proto.select = function () {
+  var rPaths = [];
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    rPaths.push(_join(this.relativePath, arguments[i]))
+  };
+
   var _set = this.selectedSet;
-  _set.select.apply(_set, arguments);
-  console.log(arguments);
+  return _set.select.apply(_set, rPaths);
 };
 DASApp_proto.select.expectedLength = -1;
 
-DASApp_proto.getSelectedSet = function () {
-  return this.selectedSet;
-};
-
 DASApp_proto.selectSet = function (rpSet) {
-  this.getSelectedSet().join(rpSet)
+  return this.selectedSet.join(rpSet)
 };
 
 DASApp_proto.selectBase = function () {
-  this.selectSet(this.getBaseSection());
+  return this.selectSet(this.getBaseSection());
 };
 
 DASApp_proto.selectInter = function () {
-  this.selectSet(this.getInterSection());
+  return this.selectSet(this.getInterSection());
 };
 
 DASApp_proto.selectPartner = function () {
-  this.selectSet(this.getPartnerSection());
+  return this.selectSet(this.getPartnerSection());
 };
 
 //#TODO:
@@ -355,22 +362,30 @@ DASApp_proto.selectRegex = function () {
 };
 
 DASApp_proto.deselect = function () {
+  var rPaths = [];
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    rPaths.push(_join(this.relativePath, arguments[i]))
+  };
+
   var _set = this.selectedSet;
-  _set.deselect.apply(_set, arguments);
+  return _set.deselect.apply(_set, rPaths);
 };
 DASApp_proto.deselect.expectedLength = -1;
 
-//#TODO:
+DASApp_proto.deselectSet = function (rpSet) {
+  return this.selectedSet.filter(rpSet)
+};
+
 DASApp_proto.deselectBase = function () {
+  return this.deselectSet(this.getBaseSection());
 };
 
-//#TODO:
 DASApp_proto.deselectInter = function () {
+  return this.deselectSet(this.getInterSection());
 };
 
-
-//#TODO:
 DASApp_proto.deselectPartner = function () {
+  return this.deselectSet(this.getPartnerSection());
 };
 
 //#TODO:
@@ -379,7 +394,7 @@ DASApp_proto.deselectRegex = function () {
 
 //#TODO:
 DASApp_proto.clearSet = function () {
-  this.selectedSet.clear();
+  return this.selectedSet.clear();
 };
 
 DASApp_proto.stashSelectedSet = function (key) {
@@ -488,6 +503,8 @@ DASCmdRunner_proto.cmdAlias = {
   "din": "deselectInterNewer",
   "dp": "deselectPartner",
   "dr": "deselectRegex",
+
+  "cls": "clearSet",
 
   "cpf": "copyFrom",
   "cpt": "copyTo",
@@ -619,7 +636,18 @@ if (require.main === module || require.main === undefined || require.main.id ===
   app.loadState();
 
   if (args.length === 0) args.push("status");
-  console.log(app.cmd(args).exec());
+  var out = app.cmd(args).exec();
+  console.log(
+    out
+      ? (
+        out.toString
+          ? out.toString()
+          : out.toJSON
+            ? out.toJSON()
+            : out
+      )
+      : out
+  );
 
   if (app.anchorDir) app.saveState();
 };
