@@ -17,6 +17,7 @@ var _join = path.join;
 var _relative = path.relative;
 var _dirname = path.dirname;
 var _resolve = path.resolve;
+var _lstatSync = fs.lstatSync;
 var _readdirSync = fs.readdirSync;
 var _readFileSync = fs.readFileSync;
 var _writeFileSync = fs.writeFileSync;
@@ -24,16 +25,15 @@ var _existsSync = fs.existsSync;
 function _tree(dirPath) {
   var out = [];
 
-  var ls = _readdirSync(dirPath, { withFileTypes: true });
   var curPath;
-  ls.forEach(function (dirent) {
-    curPath = _join(dirPath, dirent.name)
-    if (dirent.isDirectory()) {
+  _readdirSync(dirPath, { withFileTypes: true })
+    .forEach(function (dirent) {
+
+      curPath = _join(dirPath, dirent.name)
       out.push(curPath);
-      out = out.concat(_tree(curPath))
-    }
-    else out.push(curPath);
-  });
+
+      if (dirent.isDirectory()) out = out.concat(_tree(curPath))
+    });
 
   return out;
 };
@@ -47,8 +47,16 @@ const FSHandler = {
     });
   },
 
-  treeDir: function (dirPath) {
-    return this.massRelative(dirPath, this.tree(dirPath))
+  treeDir: function (dirPath, relativePath) {
+    return this.massRelative(dirPath, this.tree(_join(dirPath, relativePath || ".")))
+  },
+
+  getIntersectionOf2Dir: function (baseDir, partnerDir, relativePath) {
+    var outSet = RPSet.fromArray(this.treeDir(baseDir, relativePath));
+    var pSet = RPSet.fromArray(this.treeDir(partnerDir, relativePath));
+    outSet.inter(pSet);
+
+    return outSet;
   },
 
   findFileInAncestor: function (findPath, dirPath) {
@@ -66,15 +74,8 @@ const FSHandler = {
     while (dirPath !== _dirPath)
 
     return null;
-  },
-
-  getIntersectionOf2Dir: function (baseDir, partnerDir) {
-    var outSet = RPSet.fromArray(this.treeDir(baseDir));
-    var pSet = RPSet.fromArray(this.treeDir(partnerDir));
-    outSet.inter(pSet);
-
-    return outSet;
   }
+
 };
 
 
@@ -137,14 +138,15 @@ RPSet_proto.inter = function (rpSet) {
   for (var rPath in this.set) {
     if (!pSet.hasOwnProperty(rPath)) this.deselectOne(rPath);
   };
+  return this;
 };
 
-RPSet_proto.filter = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    Object.keys(arguments[i]).forEach(
-      function (key) { this.deselectOne(key) },
-      this);
+RPSet_proto.filter = function (rpSet) {
+  var pSet = rpSet.set;
+  for (var rPath in this.set) {
+    if (pSet.hasOwnProperty(rPath)) this.deselectOne(rPath);
   };
+  return this;
 };
 
 RPSet_proto.clear = function () {
@@ -154,6 +156,7 @@ RPSet_proto.clear = function () {
 RPSet.fromArray = function (arr) {
   return new this(arr);
 }
+
 
 /**
  * DASdirectory
@@ -171,17 +174,18 @@ DASdirectory_proto.toJSON = function () {
   return this.uri;
 };
 
-DASdirectory_proto.ls = function (pelativePath) {
-  return RPSet.fromArray(_readdirSync(_join(this.path, pelativePath)));
+DASdirectory_proto.ls = function (relativePath) {
+  return RPSet.fromArray(_readdirSync(_join(this.path, relativePath || ".")));
 };
 
-DASdirectory_proto.inter = function (partnerPath, pelativePath) {
-  if (!pelativePath) pelativePath = ".";
-  return FSHandler.getIntersectionOf2Dir(
-    _join(this.path, pelativePath),
-    _join(partnerPath, pelativePath),
-  );
+DASdirectory_proto.treeDir = function (relativePath) {
+  return RPSet.fromArray(FSHandler.treeDir(this.path, relativePath));
 };
+
+DASdirectory_proto.inter = function (partnerPath, relativePath) {
+  return FSHandler.getIntersectionOf2Dir(this.path, partnerPath, relativePath || ".");
+};
+
 
 /**
  * DASAppState
@@ -282,6 +286,8 @@ DASAppState_proto.setPartner = function (inputString) {
  */
 function DASApp() {
   this._state = new DASAppState();
+  this.cwd = process.cwd();
+  this.relativePath = null;
 };
 const DASApp_proto = DASApp.prototype;
 
@@ -292,11 +298,16 @@ DASApp_proto.init = function () {
 
 DASApp_proto.loadState = function (anchorDir) {
   this._state.load();
+  this.refreshRelativePath();
+};
+
+DASApp_proto.refreshRelativePath = function (toPath) {
+  this.relativePath = _relative(this.getBase().path, toPath || process.cwd());
 };
 
 //#TODO:
 DASApp_proto.state = function () {
-  console.dir(this._state, { depth: null })
+  console.dir(this, { depth: null })
 };
 
 DASApp_proto.saveState = function () {
@@ -325,20 +336,28 @@ DASApp_proto.ls = function () {
   console.log("ls")
 };
 
-DASApp_proto.base = function (inputString) {
+DASApp_proto.setBase = function (inputString) {
   this._state.setBase(inputString)
+};
+
+DASApp_proto.getBase = function () {
+  return this._state.base;
 };
 
 //#TODO:
 DASApp_proto.basePwd = function (inputString) {
 };
 
-DASApp_proto.partner = function (inputString) {
+DASApp_proto.setPartner = function (inputString) {
   this._state.setPartner(inputString)
 };
 
+DASApp_proto.getPartner = function () {
+  return this._state.partner;
+};
+
 DASApp_proto.alias = function (inputString) {
-  this._state.setAlias(inputString, this._state.partner.uri)
+  this._state.setAlias(inputString, this.getPartner().uri)
 };
 
 DASApp_proto.clearAlias = function () {
@@ -358,11 +377,16 @@ DASApp_proto.select.expectedLength = -1;
 
 //#TODO:
 DASApp_proto.selectBase = function () {
+  var base = this.getBase();
+  this._state.set.join(
+    this.getBase().treeDir(this.relativePath)
+      .filter(this.getPartner().treeDir(this.relativePath))
+  );
 };
 
 DASApp_proto.selectInter = function () {
   this._state.set.join(
-    this._state.base.inter(this._state.partner.path)
+    this.getBase().inter(this.getPartner().path, this.relativePath)
   );
 };
 ``
@@ -413,7 +437,7 @@ DASApp_proto.deselectRegex = function () {
 };
 
 //#TODO:
-DASApp_proto.setClear = function () {
+DASApp_proto.clearSet = function () {
   this._state.set.clear();
 };
 
