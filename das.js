@@ -106,10 +106,12 @@ RPSet_proto.toString = function () {
 
 RPSet_proto.fromArray = function (array) {
   this.select.apply(this, array);
+  return this;
 };
 
 RPSet_proto.selectOne = function (inputString, value) {
   this.set[inputString] = value || null;
+  return this;
 };
 
 RPSet_proto.select = function () {
@@ -151,6 +153,22 @@ RPSet_proto.filter = function (rpSet) {
   var pSet = rpSet.set;
   for (var rPath in this.set) {
     if (pSet.hasOwnProperty(rPath)) this.deselectOne(rPath);
+  };
+  return this;
+};
+
+RPSet_proto.filterMatchRegex = function (pattern, flags) {
+  var regex = new RegExp(pattern, flags);
+  for (var rPath in this.set) {
+    if (!rPath.match(regex)) this.deselectOne(rPath);
+  };
+  return this;
+};
+
+RPSet_proto.filterNotMatchRegex = function (pattern, flags) {
+  var regex = new RegExp(pattern, flags);
+  for (var rPath in this.set) {
+    if (rPath.match(regex)) this.deselectOne(rPath);
   };
   return this;
 };
@@ -361,7 +379,7 @@ DASApp_proto.selectPartner = function () {
 };
 
 //#TODO:
-DASApp_proto.selectRegex = function () {
+DASApp_proto.selectRegex = function (pattern, flags) {
 };
 
 DASApp_proto.deselect = function () {
