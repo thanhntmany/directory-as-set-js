@@ -420,7 +420,7 @@ DASApp_proto.clearSet = function () {
 
 DASApp_proto.stashSelectedSet = function (key) {
   if (key === undefined) key = Object.keys(this.stashSet).length;
-  this.stashSet[key] = this.selectedSet;
+  this.stashSet[key] = Object.assign({}, this.selectedSet);
   return key
 };
 
