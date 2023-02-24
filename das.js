@@ -75,6 +75,12 @@ const FSHandler = {
     while (dirPath !== _dirPath)
 
     return null;
+  },
+
+  ifDirContains: function (dir, toPath) {
+    const relative = path.relative(dir, toPath);
+    console.log("relative:", relative)
+    return relative === "" || relative && !relative.startsWith('..') && !path.isAbsolute(relative);
   }
 
 };
@@ -307,10 +313,13 @@ DASApp_proto.loadState = function (anchorDir) {
   data.partner = _join(anchorDir, data.partner);
 
   var cwd = process.cwd();
-  if (!cwd.startsWith(data.base)) {
+  console.log("base:", data.base);
+  console.log("cwd:", cwd);
+
+  if (!FSHandler.ifDirContains(data.base, cwd)) {
 
     var curBasePath = Object.values(data.alias)
-      .find(function (dirPath) { return cwd.startsWith(dirPath) });
+      .find(function (dirPath) { return FSHandler.ifDirContains(dirPath, cwd) });
 
     if (curBasePath) {
       if (curBasePath == data.partner) data.partner = data.base;
@@ -563,7 +572,7 @@ DASCmdRunner_proto.cmdAlias = {
   "exec": "nop",
 
   "a": "setAlias",
-  "ra": "realia",  
+  "ra": "realia",
   "cas": "clearAlias",
 
   "b": "setBase",
