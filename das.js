@@ -403,11 +403,6 @@ DASApp_proto.getPartnerSection = function () {
     .filter(this.base.treeDir(this.relativePath));
 };
 
-//#TODO:
-DASApp_proto.ls = function () {
-  return this.selectedSet
-};
-
 // Selection
 DASApp_proto.select = function () {
   var rPaths = [];
@@ -472,7 +467,11 @@ DASApp_proto.deselectRegex = function (pattern, flags) {
   return this.selectedSet.filterNotMatchRegex(pattern, flags);
 };
 
-DASApp_proto.clearSet = function () {
+DASApp_proto.getSelectedSet = function () {
+  return this.selectedSet;
+};
+
+DASApp_proto.clearSelectedSet = function () {
   return this.selectedSet.clear();
 };
 
@@ -596,7 +595,8 @@ DASCmdRunner_proto.cmdAlias = {
   "dp": "deselectPartner",
   "dr": "deselectRegex",
 
-  "cls": "clearSet",
+  "ls": "getSelectedSet",
+  "cls": "clearSelectedSet",
 
   "cpf": "copyFrom",
   "cpt": "copyTo",
