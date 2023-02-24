@@ -79,7 +79,6 @@ const FSHandler = {
 
   ifDirContains: function (dir, toPath) {
     const relative = path.relative(dir, toPath);
-    console.log("relative:", relative)
     return relative === "" || relative && !relative.startsWith('..') && !path.isAbsolute(relative);
   }
 
@@ -313,9 +312,6 @@ DASApp_proto.loadState = function (anchorDir) {
   data.partner = _join(anchorDir, data.partner);
 
   var cwd = process.cwd();
-  console.log("base:", data.base);
-  console.log("cwd:", cwd);
-
   if (!FSHandler.ifDirContains(data.base, cwd)) {
 
     var curBasePath = Object.values(data.alias)
