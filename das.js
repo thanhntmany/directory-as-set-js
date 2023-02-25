@@ -194,6 +194,13 @@ RPSet_proto.filterNotMatchRegex = function (pattern, flags) {
   return this;
 };
 
+RPSet_proto.filterInRPath = function (relativePath) {
+  for (var rPath in this.set) {
+    if (!FSHandler.ifDirContains(relativePath, rPath)) this.deselectOne(rPath);
+  };
+  return this;
+};
+
 RPSet_proto.clear = function () {
   this.set = {};
   return this;
@@ -385,6 +392,7 @@ DASApp_proto.showState = function () {
   if (this.relativePath === null) return out;
   var selectedArray = this.selectedSet.toArray();
   var cwd = _join(this.base.path, this.relativePath);
+
   var selectedInCurDirArray = selectedArray
     .map(function (rPath) { return _join(this.base.path, rPath) }, this)
     .filter(function (rPath) { return FSHandler.ifDirContains(cwd, rPath) });
@@ -398,9 +406,11 @@ DASApp_proto.showState = function () {
     .map(function (p) { return "  - " + p })
     .join("\n");
 
-  var baseOwnSection = this.getBaseOwnSection();
-  var partnerOwnSection = this.getPartnerOwnSection();
-  var lsSet = new RPSet(this.selectedSet).join(baseOwnSection).join(partnerOwnSection);
+  var baseOwnSection = this.getBaseOwnSection(this.relativePath);
+  var partnerOwnSection = this.getPartnerOwnSection(this.relativePath);
+  var lsSet = new RPSet(this.selectedSet).filterInRPath(this.relativePath)
+    .join(baseOwnSection)
+    .join(partnerOwnSection);
 
   console.log(lsSet);
 
