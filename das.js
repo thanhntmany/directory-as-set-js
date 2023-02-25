@@ -91,124 +91,161 @@ const FSHandler = {
 
 
 /**
+ * Arrary as set Helper
+ */
+const ArrayAsSetHelper = {
+  select: function () {
+    var arr = arguments[0];
+    for (var i = 1, l = arguments.length; i < l; i++) {
+      if (!arr.includes(arguments[i])) arr.push(arguments[i])
+    };
+    return arr;
+  },
+
+  deselect: function () {
+    var arr = arguments[0], idx;
+    for (var i = 1, l = arguments.length; i < l; i++)
+      if ((idx = list.indexOf(arguments[i])) >= 0) arr.splice(idx, 1);
+    return arr;
+  },
+
+  join: function () {
+    var arr = arguments[0], l = arguments.length;
+    if (l < 2) return (arr || []).slice();
+
+    for (var i = 1; i < l; i++)
+      arr = arr.concat(
+        Array.from(arguments[i]).filter(function (el) {
+          return !arr.includes(el);
+        }));
+    return arr
+  },
+
+  filterOut: function (arr1, arr2) {
+    return arr1.filter(function (el) {
+      return arr2.includes(el)
+    })
+  },
+
+  inter: function (arr1, arr2) {
+    return arr1.filter(function (el) {
+      arr2.includes(el)
+    })
+  },
+
+};
+const ArrASet = ArrayAsSetHelper;
+
+/**
  * Relative Path Set
  */
-function RPSet(data) {
-  this.set = {};
+// function RPSet(data) {
+//   this.list = Array.isArray(data)
+//     ? data
+//     : data instanceof this.constructor
+//       ? data.list
+//       : [];
+// };
+// const RPSet_proto = RPSet.prototype;
 
-  if (Array.isArray(data)) {
-    this.fromArray(data);
-  }
-  else if (data instanceof this.constructor) {
-    this.join(data);
-  }
-  else this.joinObj(data);
-};
-const RPSet_proto = RPSet.prototype;
+// RPSet_proto.toJSON = function () {
+//   return this.list;
+// };
+// RPSet_proto.toString = function () {
+//   return this.list.join("\n")
+// };
 
-RPSet_proto.defaultValue = {}
 
-RPSet_proto.toJSON = function () {
-  return this.set;
-};
-RPSet_proto.toString = function () {
-  return Object.keys(this.toJSON()).join("\n")
-};
+// RPSet_proto.toArray = function () {
+//   return this.set;
+// };
 
-RPSet_proto.fromArray = function (array) {
-  this.select.apply(this, array);
-  return this;
-};
+// RPSet_proto.clone = function () {
+//   return new this.constructor(this.list.slice());
+// };
 
-RPSet_proto.toArray = function () {
-  return Object.keys(this.set);
-};
+// RPSet_proto.has = function (rPath) {
+//   return this.list.includes(rPath);
+// };
 
-RPSet_proto.has = function (rPath) {
-  return this.set.hasOwnProperty(rPath)
-};
+// RPSet_proto.selectOne = function (inputString) {
+//   if (!_list.includes(inputString)) _list.push(inputString);
+// };
 
-RPSet_proto.selectOne = function (inputString, value) {
-  this.set[inputString] = value || null;
-  return this;
-};
+// RPSet_proto.select = function () {
+//   for (var i = 0, l = arguments.length; i < l; i++)
+//     this.selectOne(arguments[i]);
+//   return this;
+// };
 
-RPSet_proto.select = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    this.selectOne(arguments[i]);
-  };
-  return this;
-};
+// RPSet_proto.deselectOne = function (inputString) {
+//   var idx = this.list.indexOf(inputString);
+//   if (idx >= 0) this.list.splice(idx, 1);
+// };
 
-RPSet_proto.deselectOne = function (inputString) {
-  delete this.set[inputString];
-};
+// RPSet_proto.deselect = function (rpSet) {
+//   for (var i = 0, l = arguments.length; i < l; i++)
+//     this.deselectOne(arguments[i]);
+//   return this;
+// };
 
-RPSet_proto.deselect = function (rpSet) {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    this.deselectOne(arguments[i]);
-  };
-  return this;
-};
+// RPSet_proto.join = function (rpSet) {
+//   if (rpSet instanceof this.constructor) rpSet = rpSet.list;
+//   var _list = this.list;
 
-RPSet_proto.join = function (rpSet) {
-  Object.assign(this.set, rpSet.set);
-  return this;
-};
+//   return new this.constructor(
+//     _list.concat(rpSet.filter(function (p) { return !_list.includes(p) }, this)));
+// };
 
-RPSet_proto.joinObj = function (setObj) {
-  Object.assign(this.set, setObj);
-};
+// RPSet_proto.inter = function (rpSet) {
+//   var bList = this.list,
+//     pList = rpSet instanceof this.constructor ? rpSet.list : rpSet;
+//   return new this.constructor(
+//     pList.filter(function (p) { return bList.includes(p) })
+//   );
+// };
 
-RPSet_proto.inter = function (rpSet) {
-  var pSet = rpSet.set;
-  for (var rPath in this.set) {
-    if (!pSet.hasOwnProperty(rPath)) this.deselectOne(rPath);
-  };
-  return this;
-};
+// RPSet_proto.filter = function (rpSet) {
+//   var bList = this.list,
+//     pList = rpSet instanceof this.constructor ? rpSet.list : rpSet;
+//   return new this.constructor(
+//     bList.filter(function (p) { return bList.includes(p) })
+//   );
+// };
 
-RPSet_proto.filter = function (rpSet) {
-  var pSet = rpSet.set;
-  for (var rPath in this.set) {
-    if (pSet.hasOwnProperty(rPath)) this.deselectOne(rPath);
-  };
-  return this;
-};
+// RPSet_proto.filterMatchRegex = function (pattern, flags) {
+//   if (!flags) flags = 'g';
+//   var regex = new RegExp(pattern, flags);
+//   for (var rPath in this.set) {
+//     if (!rPath.match(regex)) this.deselectOne(rPath);
+//   };
+//   return this;
+// };
 
-RPSet_proto.filterMatchRegex = function (pattern, flags) {
-  if (!flags) flags = 'g';
-  var regex = new RegExp(pattern, flags);
-  for (var rPath in this.set) {
-    if (!rPath.match(regex)) this.deselectOne(rPath);
-  };
-  return this;
-};
+// RPSet_proto.filterNotMatchRegex = function (pattern, flags) {
+//   if (!flags) flags = 'g';
+//   var regex = new RegExp(pattern, flags);
+//   for (var rPath in this.set) {
+//     if (rPath.match(regex)) this.deselectOne(rPath);
+//   };
+//   return this;
+// };
 
-RPSet_proto.filterNotMatchRegex = function (pattern, flags) {
-  if (!flags) flags = 'g';
-  var regex = new RegExp(pattern, flags);
-  for (var rPath in this.set) {
-    if (rPath.match(regex)) this.deselectOne(rPath);
-  };
-  return this;
-};
+// RPSet_proto.filterInRPath = function (relativePath) {
+//   for (var rPath in this.set) {
+//     if (!FSHandler.ifDirContains(relativePath, rPath)) this.deselectOne(rPath);
+//   };
+//   return this;
+// };
 
-RPSet_proto.filterInRPath = function (relativePath) {
-  for (var rPath in this.set) {
-    if (!FSHandler.ifDirContains(relativePath, rPath)) this.deselectOne(rPath);
-  };
-  return this;
-};
+// RPSet_proto.clear = function () {
+//   this.set = {};
+//   return this;
+// };
 
-RPSet_proto.clear = function () {
-  this.set = {};
-  return this;
-};
-
-RPSet.fromArray = function (arr) {
-  return new this(arr);
-}
+// RPSet.fromArray = function (arr) {
+//   return new this(arr);
+// }
 
 
 /**
