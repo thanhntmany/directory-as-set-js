@@ -105,8 +105,16 @@ const ArrayAsSetHelper = {
   deselect: function () {
     var arr = arguments[0], idx;
     for (var i = 1, l = arguments.length; i < l; i++)
-      if ((idx = list.indexOf(arguments[i])) >= 0) arr.splice(idx, 1);
+      if ((idx = arr.indexOf(arguments[i])) >= 0) arr.splice(idx, 1);
     return arr;
+  },
+
+  distinct: function(arr) {
+    var out = [];
+    arr.forEach(function (el) {
+      if (!out.includes(el)) out.push(el);
+    });
+    return out;
   },
 
   join: function () {
@@ -123,18 +131,18 @@ const ArrayAsSetHelper = {
 
   filterOut: function (arr1, arr2) {
     return arr1.filter(function (el) {
-      return arr2.includes(el)
+      return !arr2.includes(el)
     })
   },
 
   inter: function (arr1, arr2) {
     return arr1.filter(function (el) {
-      arr2.includes(el)
+      return arr2.includes(el)
     })
   },
 
 };
-const ArrASet = ArrayAsSetHelper;
+const ArrAsSet = ArrayAsSetHelper;
 
 /**
  * Relative Path Set
