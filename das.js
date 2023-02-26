@@ -200,16 +200,20 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
   };
 
   listDir = AAS.distinct(listDir).sort();
+  listFile = AAS.distinct(listFile).sort();
 
-  console.log("listFile: ", listFile);
   console.log("listDir: ", listDir);
+  console.log("listFile: ", listFile);
 
 
-  return "";
   // Preparing Directory tree
   var lisRelativeDir = 1
-
+  
   // Copy
+  
+  // Remove emty folder at source
+
+  return "";
 
 };
 
@@ -631,6 +635,7 @@ DASApp_proto.stashSelectedSet = function (key) {
 };
 
 DASApp_proto.unstashSelectedSet = function (key) {
+  if (key === undefined) key = Object.keys(this.stashSet).pop();
   this.selectedSet = this.stashSet[key];
   delete this.stashSet[key];
   return this.selectedSet
