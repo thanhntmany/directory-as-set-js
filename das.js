@@ -548,6 +548,21 @@ DASApp_proto.unstashSelectedSet = function (key) {
   delete this.stashSet[key];
 };
 
+//#TODO: have not tested yet
+DASApp_proto.unionStash = function (key) {
+  return this.selectedSet = AAS.union(this.selectedSet, this.stashSet[key])
+};
+
+//#TODO: have not tested yet
+DASApp_proto.intersectStash = function (key) {
+  return this.selectedSet = AAS.intersect(this.selectedSet, this.stashSet[key])
+};
+
+//#TODO: have not tested yet
+DASApp_proto.exceptStash = function (key) {
+  return this.selectedSet = AAS.except(this.selectedSet, this.stashSet[key])
+};
+
 DASApp_proto.clearStashSet = function () {
   this.stashSet = {};
 };
@@ -683,6 +698,9 @@ DASCmdRunner_proto.cmdAlias = {
 
   "stash": "stashSelectedSet",
   "unstash": "unstashSelectedSet",
+  "us": "unionStash",
+  "is": "intersectStash",
+  "es": "exceptStash",
   "clearstash": "clearStashSet",
   "clss": "clearStashSet",
 };
