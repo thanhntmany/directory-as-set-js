@@ -349,6 +349,7 @@ DASApp_proto.showState = function () {
   var out = '';
 
   out += "Anchor Directory : " + this.anchorDir + path.sep + "\n";
+  out += "\n";
 
   if (Object.keys(this.alias).length > 0) {
     out += "Alias :\n";
@@ -358,6 +359,16 @@ DASApp_proto.showState = function () {
     };
     out += "\n";
   };
+
+  if (Object.keys(this.stashSet).length > 0) {
+    out += "Stash :\n";
+    var pad = Math.max.apply(null, Object.keys(this.stashSet).map(function (a) { return a.length }));
+    for (var alia in this.stashSet) {
+      out += "  " + alia.padEnd(pad, " ") + ": (" + this.stashSet[alia].length + ")\n";
+    };
+    out += "\n";
+  };
+
 
   out += "Base      : (" + this.getAliasOf(this.base.path) + ") " + _relative(this.anchorDir, this.base.path) + path.sep + "\n";
   out += "⑅ Partner : (" + this.getAliasOf(this.partner.path) + ") " + _relative(this.anchorDir, this.partner.path) + path.sep + "\n";
