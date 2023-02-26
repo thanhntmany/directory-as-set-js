@@ -377,7 +377,10 @@ DASApp_proto.loadState = function (anchorDir) {
   };
 
   this.constructor.call(this, data);
-  this.relativePath = _relative(this.base.path, cwd);
+  this.relativePath = _dirContains(this.base.path, cwd)
+    ? _relative(this.base.path, cwd)
+    : ".";
+
 };
 
 
@@ -433,7 +436,7 @@ DASApp_proto.showState = function () {
   if (this.relativePath === null) return out;
 
   var _relativePath = this.relativePath;
-  var cwd = process.cwd();
+  var cwd = _join(this.base.path, _relativePath);
   var selectedArray = this.selectedSet;
   var selectedInCurDirArray = selectedArray.filter(function (rPath) {
     return _dirContains(cwd, _join(this.base.path, rPath))
