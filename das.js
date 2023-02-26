@@ -373,7 +373,7 @@ DASApp_proto.showState = function () {
   }, this)
 
   out += "Selected  : " + selectedArray.length + "\n";
-  out += "[ " + (selectedArray.length - selectedInCurDirArray.length) + " ] : ...\n";
+  out += "[ " + (selectedArray.length - selectedInCurDirArray.length) + " ] :   │" + (selectedArray.length - selectedInCurDirArray.length > 0 ? "▶ ..." : "") + "\n";
   out += "[ " + selectedInCurDirArray.length + " ] : " + _relativePath + path.sep + "\n";
 
   var baseOwnSection = this.getBaseOwnSection(_relativePath);
@@ -387,11 +387,12 @@ DASApp_proto.showState = function () {
 
   out += lsSet.sort()
     .map(function (rPath) {
-      return ""
-        + (selectedInCurDirArray.includes(rPath) ? "X" : " ") + "  "
+      return " "
         + (baseSection.includes(rPath) ? "b" : " ") + "  "
         + (intersectSection.includes(rPath) ? "i" : " ") + "  "
         + (partnerSection.includes(rPath) ? "p" : " ") + "  "
+        + "│"
+        + (selectedInCurDirArray.includes(rPath) ? "▶" : " ") + " "
         + _relative(_relativePath, rPath)
     })
     .join("\n");
