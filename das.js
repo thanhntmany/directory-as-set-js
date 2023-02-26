@@ -546,6 +546,7 @@ DASApp_proto.stashSelectedSet = function (key) {
 DASApp_proto.unstashSelectedSet = function (key) {
   this.selectedSet = this.stashSet[key];
   delete this.stashSet[key];
+  return this.selectedSet
 };
 
 //#TODO: have not tested yet
