@@ -11,249 +11,147 @@ const fs = require('fs');
 
 
 /**
+ * base operations:
+ * - self
+ * - intersect
+ * - minus
+ * - union
+ * 
+ */
+
+/**
  * File system IO Handler (helper)
  */
 var _join = path.join;
 var _relative = path.relative;
 var _dirname = path.dirname;
 var _resolve = path.resolve;
+var _lstatSync = fs.lstatSync;
 var _mkdirSync = fs.mkdirSync;
 var _rmdirSync = fs.rmdirSync;
 var _readdirSync = fs.readdirSync;
 var _readFileSync = fs.readFileSync;
 var _writeFileSync = fs.writeFileSync;
 var _existsSync = fs.existsSync;
+var _isDirectory = function (dirPath) { return _lstatSync(dirPath).isDirectory() };
+
+
 function _tree(dirPath) {
-  var out = [];
-
-  var curPath;
-  _readdirSync(dirPath, { withFileTypes: true })
-    .forEach(function (dirent) {
-
-      curPath = _join(dirPath, dirent.name)
-      out.push(curPath);
-
-      if (dirent.isDirectory()) out = out.concat(_tree(curPath))
-    });
-
+  var out = [], curPath;
+  _readdirSync(dirPath, { withFileTypes: true }).forEach(function (dirent) {
+    out.push(curPath = _join(dirPath, dirent.name));
+    if (dirent.isDirectory()) out = out.concat(_tree(curPath))
+  });
   return out;
 };
 
-const FSHandler = {
-  tree: function (dirPath) {
-    return _existsSync(dirPath) ? _tree(dirPath) : [];
-  },
-
-  massJoin: function (fromPath, toPaths) {
-    return toPaths.map(function (filePath) {
-      return _join(fromPath, filePath);
-    });
-  },
-
-  massRelative: function (fromPath, toPaths) {
-    return toPaths.map(function (filePath) {
-      return _relative(fromPath, filePath);
-    });
-  },
-
-  treeDir: function (dirPath, relativePath) {
-    return this.massRelative(dirPath, this.tree(_join(dirPath, relativePath || ".")))
-  },
-
-  getIntersectionOf2Dir: function (baseDir, partnerDir, relativePath) {
-    return RPSet.fromArray(this.treeDir(baseDir, relativePath))
-      .inter(RPSet.fromArray(this.treeDir(partnerDir, relativePath)));
-  },
-
-  findFileInAncestor: function (findPath, dirPath) {
-    if (dirPath === undefined) dirPath = process.cwd();
-    dirPath = _resolve(dirPath);
-    var p, _dirPath;
-
-    do {
-      p = _join(dirPath, findPath);
-      if (_existsSync(p)) return dirPath;
-
-      _dirPath = dirPath;
-      dirPath = _dirname(dirPath);
+function _treeIntersec(baseDir, partnerDir) {
+  var out = [], baseCurPath, partnerCurPath;
+  _readdirSync(baseDir, { withFileTypes: true }).forEach(function (dirent) {
+    if (_existsSync(partnerCurPath = _join(partnerDir, dirent.name))) {
+      out.push(baseCurPath = _join(baseDir, dirent.name));
+      if (dirent.isDirectory() && _isDirectory(partnerCurPath))
+        out = out.concat(_treeIntersec(baseCurPath, partnerCurPath));
     }
-    while (dirPath !== _dirPath)
-
-    return null;
-  },
-
-  ifDirContains: function (dir, toPath) {
-    const relative = path.relative(dir, toPath);
-    return relative === "" || relative && !relative.startsWith('..') && !path.isAbsolute(relative);
-  }
-
+  });
+  return out;
 };
 
-
-/**
- * Arrary as set Helper
- */
-const ArrayAsSetHelper = {
-  select: function () {
-    var arr = arguments[0];
-    for (var i = 1, l = arguments.length; i < l; i++) {
-      if (!arr.includes(arguments[i])) arr.push(arguments[i])
+function _treeMinus(baseDir, partnerDir) {
+  var out = [], baseCurPath, partnerCurPath;
+  _readdirSync(baseDir, { withFileTypes: true }).forEach(function (dirent) {
+    if (!_existsSync(partnerCurPath = _join(partnerDir, dirent.name))) {
+      out.push(baseCurPath = _join(baseDir, dirent.name));
+      if (dirent.isDirectory()) out = out.concat(_tree(baseCurPath))
+    }
+    else {
+      if (!_isDirectory(partnerCurPath)) return;
+      out = out.concat(_treeMinus(_join(baseDir, dirent.name), partnerCurPath));
     };
-    return arr;
-  },
-
-  deselect: function () {
-    var arr = arguments[0], idx;
-    for (var i = 1, l = arguments.length; i < l; i++)
-      if ((idx = arr.indexOf(arguments[i])) >= 0) arr.splice(idx, 1);
-    return arr;
-  },
-
-  distinct: function(arr) {
-    var out = [];
-    arr.forEach(function (el) {
-      if (!out.includes(el)) out.push(el);
-    });
-    return out;
-  },
-
-  join: function () {
-    var arr = arguments[0], l = arguments.length;
-    if (l < 2) return (arr || []).slice();
-
-    for (var i = 1; i < l; i++)
-      arr = arr.concat(
-        Array.from(arguments[i]).filter(function (el) {
-          return !arr.includes(el);
-        }));
-    return arr
-  },
-
-  filterOut: function (arr1, arr2) {
-    return arr1.filter(function (el) {
-      return !arr2.includes(el)
-    })
-  },
-
-  inter: function (arr1, arr2) {
-    return arr1.filter(function (el) {
-      return arr2.includes(el)
-    })
-  },
-
+  });
+  return out;
 };
-const ArrAsSet = ArrayAsSetHelper;
-
-/**
- * Relative Path Set
- */
-// function RPSet(data) {
-//   this.list = Array.isArray(data)
-//     ? data
-//     : data instanceof this.constructor
-//       ? data.list
-//       : [];
-// };
-// const RPSet_proto = RPSet.prototype;
-
-// RPSet_proto.toJSON = function () {
-//   return this.list;
-// };
-// RPSet_proto.toString = function () {
-//   return this.list.join("\n")
-// };
 
 
-// RPSet_proto.toArray = function () {
-//   return this.set;
-// };
+function _joinMass(fromPath, toPaths) {
+  return toPaths.map(function (filePath) {
+    return _join(fromPath, filePath);
+  });
+};
 
-// RPSet_proto.clone = function () {
-//   return new this.constructor(this.list.slice());
-// };
+function _relativeMass(fromPath, toPaths) {
+  return toPaths.map(function (filePath) {
+    return _relative(fromPath, filePath);
+  });
+};
 
-// RPSet_proto.has = function (rPath) {
-//   return this.list.includes(rPath);
-// };
+function _treeInDir(dirPath, relativePath) {
+  return _relativeMass(dirPath, _tree(_join(dirPath, relativePath || ".")))
+};
 
-// RPSet_proto.selectOne = function (inputString) {
-//   if (!_list.includes(inputString)) _list.push(inputString);
-// };
+function _findFileInAncestor(findPath, dirPath) {
+  dirPath = dirPath !== undefined ? _resolve(dirPath) : process.cwd();
+  var _dirPath;
 
-// RPSet_proto.select = function () {
-//   for (var i = 0, l = arguments.length; i < l; i++)
-//     this.selectOne(arguments[i]);
-//   return this;
-// };
+  do {
+    if (_existsSync(_join(dirPath, findPath))) return dirPath;
+    dirPath = _dirname(_dirPath = dirPath);
+  }
+  while (dirPath !== _dirPath)
 
-// RPSet_proto.deselectOne = function (inputString) {
-//   var idx = this.list.indexOf(inputString);
-//   if (idx >= 0) this.list.splice(idx, 1);
-// };
+  return undefined;
+};
 
-// RPSet_proto.deselect = function (rpSet) {
-//   for (var i = 0, l = arguments.length; i < l; i++)
-//     this.deselectOne(arguments[i]);
-//   return this;
-// };
+function _dirContains(dir, toPath) {
+  var relative = _relative(dir, toPath);
+  return relative === "" || relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+};
 
-// RPSet_proto.join = function (rpSet) {
-//   if (rpSet instanceof this.constructor) rpSet = rpSet.list;
-//   var _list = this.list;
+  /**
+   * Arrary as set Helper
+   */
+  // optimized
+  const ArrayAsSetHelper = {
 
-//   return new this.constructor(
-//     _list.concat(rpSet.filter(function (p) { return !_list.includes(p) }, this)));
-// };
+    select: function (arr, value) {
+      if (!arr.includes(value)) arr.push(value)
+      return arr;
+    },
 
-// RPSet_proto.inter = function (rpSet) {
-//   var bList = this.list,
-//     pList = rpSet instanceof this.constructor ? rpSet.list : rpSet;
-//   return new this.constructor(
-//     pList.filter(function (p) { return bList.includes(p) })
-//   );
-// };
+    deselect: function (arr, value) {
+      var idx;
+      if ((idx = arr.indexOf(value)) >= 0) arr.splice(idx, 1);
+      return arr;
+    },
 
-// RPSet_proto.filter = function (rpSet) {
-//   var bList = this.list,
-//     pList = rpSet instanceof this.constructor ? rpSet.list : rpSet;
-//   return new this.constructor(
-//     bList.filter(function (p) { return bList.includes(p) })
-//   );
-// };
+    distinct: function (arr) {
+      var out = [], listed = {}, l = 0, value;
+      for (value of arr) if (listed[value] !== 1) listed[out[l++] = value] = 1;
 
-// RPSet_proto.filterMatchRegex = function (pattern, flags) {
-//   if (!flags) flags = 'g';
-//   var regex = new RegExp(pattern, flags);
-//   for (var rPath in this.set) {
-//     if (!rPath.match(regex)) this.deselectOne(rPath);
-//   };
-//   return this;
-// };
+      return out;
+    },
 
-// RPSet_proto.filterNotMatchRegex = function (pattern, flags) {
-//   if (!flags) flags = 'g';
-//   var regex = new RegExp(pattern, flags);
-//   for (var rPath in this.set) {
-//     if (rPath.match(regex)) this.deselectOne(rPath);
-//   };
-//   return this;
-// };
+    union: function () {
+      return this.distinct(Array.from(arguments).flat(1))
+    },
 
-// RPSet_proto.filterInRPath = function (relativePath) {
-//   for (var rPath in this.set) {
-//     if (!FSHandler.ifDirContains(relativePath, rPath)) this.deselectOne(rPath);
-//   };
-//   return this;
-// };
+    intersect: function (arr1, arr2) {
+      var out = [], l = 0, A, B, value;
+      if (arr1.length < arr2.length) { A = arr1; B = arr2 }
+      else { A = arr2; B = arr1 };
 
-// RPSet_proto.clear = function () {
-//   this.set = {};
-//   return this;
-// };
+      for (value of A) if (B.includes(value)) out[l++] = value;
+      return out;
+    },
 
-// RPSet.fromArray = function (arr) {
-//   return new this(arr);
-// }
+    except: function (arrB, arrP) {
+      var out = [], l = 0, value;
+      for (value of arrB) if (!arrP.includes(value)) out[l++] = value;
+      return out;
+    },
+
+  };
+  const AAS = ArrayAsSetHelper;
 
 
 /**
@@ -265,28 +163,25 @@ function DASdirectory(uriToDirectory) {
   uriToDirectory = _resolve(uriToDirectory);
   this.uri = uriToDirectory;
   this.type = 'directory-as-set';
-  this.path = path.resolve(uriToDirectory);
+  this.path = _resolve(uriToDirectory);
 };
 const DASdirectory_proto = DASdirectory.prototype;
+
 DASdirectory_proto.toJSON = function () {
   return this.uri;
 };
+
 DASdirectory_proto.toString = function () {
   return this.path;
 };
 
 DASdirectory_proto.ls = function (relativePath) {
-  return RPSet.fromArray(_readdirSync(_join(this.path, relativePath || ".")));
+  return _readdirSync(_join(this.path, relativePath || "."));
 };
 
 DASdirectory_proto.treeDir = function (relativePath) {
-  return RPSet.fromArray(FSHandler.treeDir(this.path, relativePath));
+  return _treeInDir(this.path, relativePath);
 };
-
-DASdirectory_proto.inter = function (partnerPath, relativePath) {
-  return FSHandler.getIntersectionOf2Dir(this.path, partnerPath, relativePath || ".");
-};
-
 
 /**
  * DASApp
@@ -295,15 +190,10 @@ function DASApp(data) {
   if (data === undefined) data = {};
 
   this.isDryrun = data.isDryrun || false;
-  this.anchorDir = data.anchorDir || null;
+  this.anchorDir = data.anchorDir || undefined;
 
-  this.selectedSet = new RPSet(data.selectedSet);
-  this.stashSet = {};
-  if (data.stashSet) {
-    for (var key in data.stashSet)
-      data.stashSet[key] = new RPSet(data.stashSet[key]);
-    this.stashSet = data.stashSet;
-  };
+  this.selectedSet = Array.from(data.selectedSet) || [];
+  this.stashSet = data.stashSet || {};
 
   this.alias = data.alias || {};
   this.setBase(data.base); // this.base = new DASdirectory(data.base);
@@ -319,9 +209,7 @@ DASApp_proto.toJSON = function () {
     anchorDir: this.anchorDir,
 
     selectedSet: this.selectedSet.toJSON(),
-    stashSet: Object.fromEntries(Object.entries(this.stashSet)
-      .map(function (s) { return [s[0], s[1].toJSON()] })
-    ),
+    stashSet: this.stashSet,
 
     alias: this.alias,
     base: this.base.toJSON(),
@@ -338,7 +226,7 @@ DASApp_proto.ANCHOR = ".das";
 DASApp_proto.STATEFILE = "state.json";
 
 DASApp_proto.findAnchor = function (dirPath) {
-  return this.anchorDir = FSHandler.findFileInAncestor(this.ANCHOR, dirPath || process.cwd()) || process.cwd();
+  return this.anchorDir = _findFileInAncestor(this.ANCHOR, dirPath || process.cwd()) || process.cwd();
 };
 
 DASApp_proto.getStateFilePath = function (anchorDir) {
@@ -355,6 +243,7 @@ DASApp_proto.init = function () {
 DASApp_proto.clean = function () {
   var stateFile = this.getStateFilePath(this.anchorDir);
   _rmdirSync(_dirname(stateFile), { force: true, recursive: true });
+  this.anchorDir = undefined;
   return this;
 };
 
@@ -377,34 +266,26 @@ DASApp_proto.loadState = function (anchorDir) {
   data.partner = _join(anchorDir, data.partner);
 
   var cwd = process.cwd();
-  if (!FSHandler.ifDirContains(data.base, cwd)) {
 
-    var curBasePath = Object.values(data.alias)
-      .find(function (dirPath) { return FSHandler.ifDirContains(dirPath, cwd) });
-
+  if (!_dirContains(data.base, cwd)) {
+    var curBasePath = Object.values(data.alias).find(function (dirPath) { return _dirContains(dirPath, cwd) });
     if (curBasePath) {
       if (curBasePath == data.partner) data.partner = data.base;
       data.base = curBasePath;
     };
-
   };
 
   this.constructor.call(this, data);
 
-  this.relativePath = _relative(this.base.path, process.cwd());
+  this.relativePath = _relative(this.base.path, cwd);
 };
 
-DASApp_proto.xxx = function () {
-  console.log("base:", this.base.path);
-  console.log("relativePath:", this.relativePath);
-  return this;
-};
 
 DASApp_proto.saveState = function (anchorDir) {
   if (anchorDir !== undefined) this.anchorDir = anchorDir;
   if (!this.anchorDir) return;
 
-  var stateFile = this.getStateFilePath(anchorDir);
+  var stateFile = this.getStateFilePath();
 
   var data = this.toJSON();
   data.base = _relative(data.anchorDir, data.base);
@@ -462,6 +343,13 @@ DASApp_proto.showState = function () {
   return out;
 };
 
+// debug XXXXXXXXXXXXXXXXXXXXXX
+DASApp_proto.xxx = function () {
+  console.log("base:", this.base.path);
+  console.log("relativePath:", this.relativePath);
+  return this;
+};
+
 // Base
 DASApp_proto.setBase = function (inputString) {
   this.base = new DASdirectory(this.realia(inputString));
@@ -497,7 +385,7 @@ DASApp_proto.getAliasOf = function (targetPath) {
   if (targetPath === undefined) targetPath = process.cwd();
 
   for (var alia in this.alias)
-    if (FSHandler.ifDirContains(this.alias[alia], targetPath)) return alia;
+    if (_dirContains(this.alias[alia], targetPath)) return alia;
 
   return "";
 };
@@ -505,7 +393,6 @@ DASApp_proto.getAliasOf = function (targetPath) {
 DASApp_proto.clearAlias = function () {
   this.alias = {};
 };
-
 
 // Intersection Sections operations 
 DASApp_proto.getBaseOwnSection = function (relativePath) {
