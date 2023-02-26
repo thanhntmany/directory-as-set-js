@@ -711,7 +711,7 @@ DASApp_proto.nop = function (key) {
 };
 
 DASApp_proto.setDryrunMode = function (isDryrun) {
-  this.isDryrun = (isDryrun.toLowerCase() === "on");
+  this.isDryrun = (isDryrun === undefined || isDryrun.toLowerCase() === "on");
 };
 
 //#TODO:
