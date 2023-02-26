@@ -180,8 +180,10 @@ const DASExecutor_proto = DASExecutor.prototype;
 
 DASExecutor_proto.copy = function (fromDir, toDir) {
 
-  // Filter not exist file in source
-  var listFile = [], listDir = [];
+  // RP: Relative path
+  // @Source: Filter available paths in source
+  //          Get the involved directories for next phase
+  var listRPFile = [], listRPDir = [];
 
   var relPath, filePath;
   for (relPath of this.relativePathArray) {
@@ -191,27 +193,28 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
     ) continue;
 
     if (!_statSync(filePath).isDirectory()) {
-      listFile.push(relPath);
+      listRPFile.push(relPath);
       relPath = _dirname(relPath);
     };
 
-    do { listDir.push(relPath) }
+    do { listRPDir.push(relPath) }
     while (relPath !== (relPath = _dirname(relPath)));
   };
 
-  listDir = AAS.distinct(listDir).sort();
-  listFile = AAS.distinct(listFile).sort();
+  listRPDir = AAS.distinct(listRPDir).sort();
+  listRPFile = AAS.distinct(listRPFile).sort();
 
-  console.log("listDir: ", listDir);
-  console.log("listFile: ", listFile);
+  console.log("listRPDir: ", listRPDir);
+  console.log("listRPFile: ", listRPFile);
 
+  // @Dest  : Preparing Directory tree at destination
+  //          If pair is not direcrory, remove that
+  //          If pair did not exists, make that as directory
+  var dirPath; for (dirPath in listRPDir)
 
-  // Preparing Directory tree
-  var lisRelativeDir = 1
-  
-  // Copy
-  
-  // Remove emty folder at source
+  // @Dest  : Remove duplicate file at destinations
+  // @Both  : Copy from source to destination one by one
+  // @Source: Remove emty folder at source
 
   return "";
 
