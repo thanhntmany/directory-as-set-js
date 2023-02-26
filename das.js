@@ -48,6 +48,8 @@ function _tree(dirPath) {
 
 function _treeIntersect(baseDir, partnerDir) {
   var out = [], baseCurPath, partnerCurPath;
+
+  if (!_existsSync(baseDir)) return [];
   _readdirSync(baseDir, { withFileTypes: true }).forEach(function (dirent) {
     if (_existsSync(partnerCurPath = _join(partnerDir, dirent.name))) {
       out.push(baseCurPath = _join(baseDir, dirent.name));
@@ -60,6 +62,7 @@ function _treeIntersect(baseDir, partnerDir) {
 
 function _treeExcept(baseDir, partnerDir) {
   var out = [], baseCurPath, partnerCurPath;
+  if (!_existsSync(baseDir)) return [];
   _readdirSync(baseDir, { withFileTypes: true }).forEach(function (dirent) {
     if (!_existsSync(partnerCurPath = _join(partnerDir, dirent.name))) {
       out.push(baseCurPath = _join(baseDir, dirent.name));
@@ -87,6 +90,7 @@ function _relativeMass(fromPath, toPaths) {
 };
 
 function _treeInDir(dirPath, relativePath) {
+  if (!_existsSync(_join(dirPath, relativePath || "."))) return [];
   return _relativeMass(dirPath, _tree(_join(dirPath, relativePath || ".")))
 };
 
@@ -346,12 +350,14 @@ DASApp_proto.showState = function () {
 
   out += "Anchor Directory : " + this.anchorDir + path.sep + "\n";
 
-  out += "Alias :\n";
-  var pad = Math.max.apply(null, Object.keys(this.alias).map(function (a) { return a.length }));
-  for (var alia in this.alias) {
-    out += "  (" + alia.padEnd(pad, " ") + ") " + _relative(this.anchorDir, this.alias[alia]) + path.sep + "\n";
+  if (Object.keys(this.alias).length > 0) {
+    out += "Alias :\n";
+    var pad = Math.max.apply(null, Object.keys(this.alias).map(function (a) { return a.length }));
+    for (var alia in this.alias) {
+      out += "  (" + alia.padEnd(pad, " ") + ") " + _relative(this.anchorDir, this.alias[alia]) + path.sep + "\n";
+    };
+    out += "\n";
   };
-  out += "\n";
 
   out += "Base      : (" + this.getAliasOf(this.base.path) + ") " + _relative(this.anchorDir, this.base.path) + path.sep + "\n";
   out += "⑅ Partner : (" + this.getAliasOf(this.partner.path) + ") " + _relative(this.anchorDir, this.partner.path) + path.sep + "\n";
@@ -374,12 +380,18 @@ DASApp_proto.showState = function () {
   var partnerOwnSection = this.getPartnerOwnSection(_relativePath);
   var lsSet = AAS.union(selectedInCurDirArray, baseOwnSection, partnerOwnSection);
 
+  var intersectSection = this.getInterSection(_relativePath);
+  var baseSection = this.getBaseSection(_relativePath);
+  var partnerSection = this.getPartnerSection(_relativePath);
+
+
   out += lsSet.sort()
     .map(function (rPath) {
       return ""
-        + (selectedInCurDirArray.includes(rPath) ? "*" : " ") + " "
-        + (baseOwnSection.includes(rPath)        ? "*" : " ") + " "
-        + (partnerOwnSection.includes(rPath)     ? "*" : " ") + " "
+        + (selectedInCurDirArray.includes(rPath) ? "X" : " ") + "  "
+        + (baseSection.includes(rPath) ? "b" : " ") + "  "
+        + (intersectSection.includes(rPath) ? "i" : " ") + "  "
+        + (partnerSection.includes(rPath) ? "p" : " ") + "  "
         + _relative(_relativePath, rPath)
     })
     .join("\n");
