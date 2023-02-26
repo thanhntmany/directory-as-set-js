@@ -27,14 +27,14 @@ var _join = path.join,
   _relative = path.relative,
   _dirname = path.dirname,
   _resolve = path.resolve,
-  _lstatSync = fs.lstatSync,
+  _statSync = fs.statSync,
   _mkdirSync = fs.mkdirSync,
   _rmdirSync = fs.rmdirSync,
   _readdirSync = fs.readdirSync,
   _readFileSync = fs.readFileSync,
   _writeFileSync = fs.writeFileSync,
   _existsSync = fs.existsSync,
-  _isDirectory = function (dirPath) { return _lstatSync(dirPath).isDirectory() };
+  _isDirectory = function (dirPath) { return _statSync(dirPath).isDirectory() };
 
 
 function _tree(dirPath) {
@@ -96,13 +96,9 @@ function _treeInDir(dirPath, relativePath) {
 
 function _findFileInAncestor(findPath, dirPath) {
   dirPath = dirPath !== undefined ? _resolve(dirPath) : process.cwd();
-  var _dirPath;
 
-  do {
-    if (_existsSync(_join(dirPath, findPath))) return dirPath;
-    dirPath = _dirname(_dirPath = dirPath);
-  }
-  while (dirPath !== _dirPath)
+  do { if (_existsSync(_join(dirPath, findPath))) return dirPath }
+  while (dirPath !== (dirPath = _dirname(dirPath)));
 
   return undefined;
 };
@@ -168,6 +164,66 @@ const ArrayAsSetHelper = {
 
 };
 const AAS = ArrayAsSetHelper;
+
+
+/**
+ * DASExecutor
+ */
+function DASExecutor(relativePathArray) {
+  this.relativePathArray = AAS.distinct(relativePathArray);
+  this.queue = [];
+};
+DASExecutor.fromArray = function (array) {
+  return new this(array)
+};
+const DASExecutor_proto = DASExecutor.prototype;
+
+DASExecutor_proto.copy = function (fromDir, toDir) {
+
+  // Filter not exist file in source
+  var listFile = [], listDir = [];
+
+  var relPath, filePath;
+  for (relPath of this.relativePathArray) {
+    if (
+      !_existsSync(filePath = _join(fromDir, relPath))
+      || !_dirContains(fromDir, filePath)
+    ) continue;
+
+    if (!_statSync(filePath).isDirectory()) {
+      listFile.push(relPath);
+      relPath = _dirname(relPath);
+    };
+
+    do { listDir.push(relPath) }
+    while (relPath !== (relPath = _dirname(relPath)));
+  };
+
+  listDir = AAS.distinct(listDir).sort();
+
+  console.log("listFile: ", listFile);
+  console.log("listDir: ", listDir);
+
+
+  return "";
+  // Preparing Directory tree
+  var lisRelativeDir = 1
+
+  // Copy
+
+};
+
+DASExecutor_proto.move = function (fromDir, toDir) {
+
+};
+
+DASExecutor_proto.remove = function (atDir) {
+
+};
+
+DASExecutor_proto.touch = function (atDir) {
+
+};
 
 
 /**
@@ -415,7 +471,23 @@ DASApp_proto.showState = function () {
 DASApp_proto.xxx = function () {
   console.log("base:", this.base.path);
   console.log("relativePath:", this.relativePath);
-  return this;
+  var x = "src/img/icon-facebook.png";
+  console.log(x = _dirname(x));
+  console.log(x = _dirname(x));
+  console.log(x = _dirname(x));
+  console.log(x = _dirname(x));
+
+
+  var listFile = [];
+  var listDir = [];
+  var relPath, filePath, fileStats, _relPath;
+  relPath = "src/img/a/c/s/x/icon-facebook.png"
+  do {
+    listDir.push(relPath);
+  } while (relPath !== (relPath = _dirname(relPath)));
+
+  console.log(listDir);
+  return "";
 };
 
 // Base
@@ -581,13 +653,22 @@ DASApp_proto.clearStashSet = function () {
 };
 
 // Operating with selected set of relative-path
-//#TODO:
-DASApp_proto.copyFrom = function (key) {
-
+DASApp_proto.copyFrom = function (from) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .copy(
+      from !== undefined ? this.realia(from) : this.partner.path,
+      this.base.path
+    );
 };
 
-//#TODO:
-DASApp_proto.copyTo = function (key) {
+DASApp_proto.copyTo = function (to) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .copy(
+      this.base.path,
+      to !== undefined ? this.realia(to) : this.partner.path
+    );
 };
 
 //#TODO:
