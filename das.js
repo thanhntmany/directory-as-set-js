@@ -951,11 +951,6 @@ DASApp_proto.setDryrunMode = function (isDryrun) {
   this.isDryrun = (isDryrun === undefined || isDryrun.toLowerCase() === "on");
 };
 
-//#TODO:
-DASApp_proto.complete = function () {
-};
-
-
 /**
  * DASCmdRunner - Executing commandline 
  */
