@@ -611,16 +611,18 @@ DASApp_proto.showState = function () {
   var baseSection = this.getBaseSection(_relativePath);
   var partnerSection = this.getPartnerSection(_relativePath);
 
-
+  var stdoutWidth = process.stdout.columns, fPath;
   out += lsSet.sort()
     .map(function (rPath) {
+      fPath = _relative(_relativePath, rPath);
+      if (fPath.length > stdoutWidth - 20) fPath = "..." + fPath.slice(fPath.length - (stdoutWidth - 20) + 3);
       return " "
         + (baseOwnSection.includes(rPath) ? "b" : " ") + "  "
         + (intersectSection.includes(rPath) ? "i" : " ") + "  "
         + (partnerOwnSection.includes(rPath) ? "p" : " ") + "  "
         + "│"
         + (selectedInCurDirArray.includes(rPath) ? "▶" : " ") + " "
-        + _relative(_relativePath, rPath)
+        + fPath;
     })
     .join("\n");
 
