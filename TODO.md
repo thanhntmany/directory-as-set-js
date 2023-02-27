@@ -1,8 +1,7 @@
+- Write Instruction Manual
+
+
 - Make sure all cmd alias are avaliable
-
-
-
-
 
 //#TODO:
 DASApp_proto.selectInterOlder = function () {
@@ -19,14 +18,3 @@ DASApp_proto.deselectInterOlder = function () {
 //#TODO:
 DASApp_proto.deselectInterNewer = function () {
 };
-
-//#TODO:
-DASApp_proto.init = function () {
-
-};
-
-
-//#TODO:
-DASApp_proto.clean = function () {
-};
-

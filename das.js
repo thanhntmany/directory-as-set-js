@@ -1052,10 +1052,6 @@ DASCmdRunner_proto.cmdAlias = {
   "clss": "clearStashSet",
 };
 
-DASCmdRunner_proto.cmdParsersMap = {
-
-};
-
 // Helper
 function camelize(str) {
   return str.toLowerCase().replace(/(\-\w)/g, function () {
