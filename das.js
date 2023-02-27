@@ -498,6 +498,7 @@ DASdirectory_proto.treeDirExcept = function (partner, relativePath) {
   );
 };
 
+
 /**
  * DASApp
  */
@@ -539,6 +540,7 @@ DASApp_proto.toString = function () {
 // State handling
 DASApp_proto.ANCHOR = ".das";
 DASApp_proto.STATEFILE = "state.json";
+DASApp_proto.BACKUPDIR = "backup";
 
 DASApp_proto.findAnchor = function (dirPath) {
   return this.anchorDir = _findFileInAncestor(this.ANCHOR, dirPath || process.cwd()) || process.cwd();
@@ -919,6 +921,39 @@ DASApp_proto.touchAt = function (at) {
     .touch(
       at !== undefined ? this.realia(at) : this.partner.path
     );
+};
+
+DASApp_proto.getBackupDir = function (to) {
+  var dirPath = to !== undefined
+    ? this.realia(to)
+    : _join(this.anchorDir, this.ANCHOR, this.BACKUPDIR);
+  if (_existsSync(dirPath) && !_isDirectory(dirPath)) _unlinkSync(dirPath);
+  _mkdirSync(dirPath, { recursive: true });
+  return dirPath
+};
+
+DASApp_proto.backupBase = function (to) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .copy(this.base.path, this.getBackupDir(to));
+};
+
+DASApp_proto.backupPartner = function (to) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .copy(this.partner.path, this.getBackupDir(to));
+};
+
+DASApp_proto.restoreBase = function (to) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .copy(this.getBackupDir(to), this.base.path);
+};
+
+DASApp_proto.restorePartner = function (to) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .copy(this.getBackupDir(to), this.partner.path);
 };
 
 DASApp_proto.nop = function (key) {
