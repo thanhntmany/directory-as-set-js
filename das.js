@@ -172,16 +172,23 @@ const AAS = ArrayAsSetHelper;
 /**
  * DASExecutor
  */
-function DASExecutor(relativePathArray) {
+function DASExecutor(relativePathArray, logger) {
   this.relativePathArray = AAS.distinct(relativePathArray);
   this.queue = [];
+
+  if (logger) this.log = logger;
 };
 DASExecutor.fromArray = function (array) {
   return new this(array)
 };
 const DASExecutor_proto = DASExecutor.prototype;
 
+DASExecutor_proto.log = function () {
+  console.log(arguments)
+};
+
 DASExecutor_proto.copy = function (fromDir, toDir) {
+
 
   // R: Relative path
   // @Source: Filter available paths in source
@@ -207,8 +214,6 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
   listDirR = AAS.distinct(listDirR).sort();
   listFileR = AAS.distinct(listFileR).sort();
 
-  console.log("listDirR: ", listDirR);
-  console.log("listFileR: ", listFileR);
 
   // @Dest  : Preparing Directory tree at destination
   //          If pair did not exists, make that as directory
@@ -216,34 +221,36 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
   var dir, dirR;
   for (dirR of listDirR) {
     if (!_existsSync(dir = _join(toDir, dirR))) {
-      this.queue.push(["mkdir", dir]);
-      // _mkdirSync(dir);
+      this.log(["mkdir", dir]);
+      _mkdirSync(dir);
     }
     else if (!_isDirectory(dir)) {
-      this.queue.push(["unlinkSync", dir]);
-      // _unlinkSync(dir);
-      this.queue.push(["mkdir", dir]);
-      // _mkdirSync(dir);
+      this.log(["unlinkSync", dir]);
+      _unlinkSync(dir);
+      this.log(["mkdir", dir]);
+      _mkdirSync(dir);
     };
   };
 
-  // @Dest  : Remove duplicate file/folder at destinations and Copy from source to destination one by one
+
+  // @Dest  : Remove duplicate file/folder at destinations
+  //          and Copy from source to destination one by one
   var filePath, filePathR; for (filePathR of listFileR) {
 
     if (_existsSync(filePath = _join(toDir, filePathR))) {
       console.log("filePath:", filePath);
       if (!_isDirectory(filePath)) {
-        this.queue.push(["unlinkSync", filePath]);
-        // _unlinkSync(filePath);
+        this.log(["unlinkSync", filePath]);
+        _unlinkSync(filePath);
       }
       else {
-        this.queue.push(["rmdirSync", filePath]);
-        // _rmdirSync(_dirname(filePath), { force: true, recursive: true });
+        this.log(["rmdirSync", filePath]);
+        _rmdirSync(_dirname(filePath), { force: true, recursive: true });
       };
     };
 
-    this.queue.push(["copyFileSync", _join(fromDir, filePathR), filePath]);
-    // _copyFileSync(_join(fromDir, filePathR), filePath);
+    this.log(["copyFileSync", _join(fromDir, filePathR), filePath]);
+    _copyFileSync(_join(fromDir, filePathR), filePath);
   };
 
   return this.queue;
@@ -276,8 +283,6 @@ DASExecutor_proto.move = function (fromDir, toDir) {
   listDirR = AAS.distinct(listDirR).sort();
   listFileR = AAS.distinct(listFileR).sort();
 
-  console.log("listDirR: ", listDirR);
-  console.log("listFileR: ", listFileR);
 
   // @Dest  : Preparing Directory tree at destination
   //          If pair did not exists, make that as directory
@@ -285,47 +290,96 @@ DASExecutor_proto.move = function (fromDir, toDir) {
   var dir, dirR;
   for (dirR of listDirR) {
     if (!_existsSync(dir = _join(toDir, dirR))) {
-      this.queue.push(["mkdir", dir]);
-      // _mkdirSync(dir);
+      this.log(["mkdir", dir]);
+      _mkdirSync(dir);
     }
     else if (!_isDirectory(dir)) {
-      this.queue.push(["unlinkSync", dir]);
-      // _unlinkSync(dir);
-      this.queue.push(["mkdir", dir]);
-      // _mkdirSync(dir);
+      this.log(["unlinkSync", dir]);
+      _unlinkSync(dir);
+      this.log(["mkdir", dir]);
+      _mkdirSync(dir);
     };
   };
+
 
   // @Dest  : Remove duplicate file/folder at destinations and Copy from source to destination one by one
   var filePath, filePathR; for (filePathR of listFileR) {
 
     if (_existsSync(filePath = _join(toDir, filePathR))) {
       if (!_isDirectory(filePath)) {
-        this.queue.push(["unlinkSync", filePath]);
-        // _unlinkSync(filePath);
+        this.log(["unlinkSync", filePath]);
+        _unlinkSync(filePath);
       }
       else {
-        this.queue.push(["rmdirSync", filePath]);
-        // _rmdirSync(_dirname(filePath), { force: true, recursive: true });
+        this.log(["rmdirSync", filePath]);
+        _rmdirSync(_dirname(filePath), { force: true, recursive: true });
       };
     };
 
-    this.queue.push(["_renameSync", _join(fromDir, filePathR), filePath]);
-    // _renameSync(_join(fromDir, filePathR), filePath);
+    this.log(["renameSync", _join(fromDir, filePathR), filePath]);
+    _renameSync(_join(fromDir, filePathR), filePath);
   };
+
 
   // @Source: Remove emty folder at source
   listDirR.reverse();
   for (dirR of listDirR) if (_readdirSync(dir = _join(fromDir, dirR)).length === 0) {
-    this.queue.push(["rmdirSync", dir]);
-    // _rmdirSync(_dirname(dir), { force: true, recursive: true });
+    this.log(["rmdirSync", dir]);
+    _rmdirSync(_dirname(dir), { force: true, recursive: true });
   };
 
-  return this.queue;
+  return this.queue.length;
 };
 
 DASExecutor_proto.remove = function (atDir) {
+  atDir = _resolve(atDir);
 
+  // R: Relative path
+  // @Source: Filter available paths in source
+  //          Get the involved directories for next phase
+  var listFileR = [], listDirR = [];
+
+  var relPath, filePath;
+  for (relPath of this.relativePathArray) {
+    if (
+      !_existsSync(filePath = _join(atDir, relPath))
+      || !_dirContains(atDir, filePath)
+      || atDir === filePath
+    ) {
+      continue
+    };
+
+    if (!_statSync(filePath).isDirectory()) {
+      console.log("xxx -> ", filePath)
+      listFileR.push(relPath);
+      relPath = _dirname(relPath);
+    };
+
+    do { listDirR.push(relPath) }
+    while (relPath !== (relPath = _dirname(relPath)));
+  };
+
+  listDirR = AAS.distinct(listDirR).sort();
+  listFileR = AAS.distinct(listFileR).sort();
+
+
+  // @Source: Remove file by file, traversal from leaf to root
+  listFileR.reverse();
+  var filePath, filePathR; for (filePathR of listFileR) {
+    this.log(["unlinkSync", filePath = _join(atDir, filePathR)]);
+    _unlinkSync(filePath);
+  };
+
+  // @Source: Remove emty folder at source
+  listDirR.reverse();
+  var dir, dirR;
+  for (dirR of listDirR)
+    if (_existsSync(dir = _join(atDir, dirR)) && _readdirSync(dir).length === 0) {
+      this.log(["rmdirSync", dir]);
+      _rmdirSync(_dirname(dir), { force: true, recursive: true });
+    };
+
+  return this.queue;
 };
 
 DASExecutor_proto.touch = function (atDir) {
@@ -800,12 +854,20 @@ DASApp_proto.moveTo = function (to) {
     );
 };
 
-//#TODO:
-DASApp_proto.remove = function (key) {
+DASApp_proto.remove = function (at) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .remove(
+      at !== undefined ? this.realia(at) : this.base.path
+    );
 };
 
-//#TODO:
-DASApp_proto.removeAt = function (key) {
+DASApp_proto.removeAt = function (at) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .remove(
+      at !== undefined ? this.realia(at) : this.partner.path
+    );
 };
 
 //#TODO:
@@ -898,17 +960,14 @@ DASCmdRunner_proto.cmdAlias = {
   "rmt": "removeAt",
   "tof": "touch",
   "tot": "touchAt",
-
-  "older": "selectInterOlder",
-  "newer": "selectInterNewer",
-
-  "state": "showState",
-  "status": "showState",
-
   "pull": "copyFrom",
   "push": "copyTo",
   "take": "moveFrom",
   "give": "moveTo",
+
+  "state": "showState",
+  "status": "showState",
+
   "dryrun": "setDryrunMode",
 
   "stash": "stashSelectedSet",
