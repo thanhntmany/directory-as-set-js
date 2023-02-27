@@ -20,5 +20,5 @@ das [cmd...]
 Clone this repository then run the below command to add '*das*' into shell.
 
 ```bash
-sudo npm instal -g ./
+sudo npm i -g https://github.com/thanhntmany/directory-as-set-js
 ```
