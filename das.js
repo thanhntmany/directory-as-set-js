@@ -260,7 +260,7 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
     _copyFileSync(_join(fromDir, filePathR), filePath);
   };
 
-  return this.queue.length;
+  return toDir;
 
 };
 
@@ -338,7 +338,7 @@ DASExecutor_proto.move = function (fromDir, toDir) {
     _rmdirSync(dir, { force: true, recursive: true });
   };
 
-  return this.queue.length;
+  return toDir;
 };
 
 DASExecutor_proto.remove = function (atDir) {
@@ -379,13 +379,14 @@ DASExecutor_proto.remove = function (atDir) {
 
   // @Source: Remove emty folder at source
   var dir, dirR;
+  listDirR.reverse();
   for (dirR of listDirR)
     if (_existsSync(dir = _join(atDir, dirR)) && _readdirSync(dir).length === 0) {
       this.log(["rmdirSync", dir]);
       _rmdirSync(dir, { force: true, recursive: true });
     };
 
-  return this.queue.length;
+  return atDir;
 };
 
 DASExecutor_proto.touch = function (atDir) {
@@ -443,7 +444,7 @@ DASExecutor_proto.touch = function (atDir) {
       _rmdirSync(dir, { force: true, recursive: true });
     };
 
-  return this.queue.length;
+  return atDir;
 };
 
 
@@ -674,9 +675,8 @@ DASApp_proto.showState = function () {
       fPath = _relative(_relativePath, rPath);
       if (fPath.length > stdoutWidth - 20) fPath = "..." + fPath.slice(fPath.length - (stdoutWidth - 20) + 3);
       return " "
-        + (baseOwnSection.includes(rPath) ? "b" : " ") + "  "
-        + (intersectSection.includes(rPath) ? "i" : " ") + "  "
-        + (partnerOwnSection.includes(rPath) ? "p" : " ") + "  "
+        + (!baseOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "b")) + "  "
+        + (!partnerOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "p")) + "  "
         + "│"
         + (selectedInCurDirArray.includes(rPath) ? "▶" : " ") + " "
         + fPath;
