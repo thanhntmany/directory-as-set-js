@@ -37,6 +37,10 @@ var _join = path.join,
   _existsSync = fs.existsSync,
   _copyFileSync = fs.copyFileSync,
   _renameSync = fs.renameSync,
+  _touch = function (filePath) {
+    var fd = fs.openSync(filePath, "a");
+    fs.closeSync(fd);
+  },
   _isDirectory = function (dirPath) { return _statSync(dirPath).isDirectory() };
 
 
@@ -188,6 +192,8 @@ DASExecutor_proto.log = function () {
 };
 
 DASExecutor_proto.copy = function (fromDir, toDir) {
+  fromDir = _resolve(fromDir);
+  toDir = _resolve(toDir);
 
 
   // R: Relative path
@@ -202,7 +208,7 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
       || !_dirContains(fromDir, filePath)
     ) continue;
 
-    if (!_statSync(filePath).isDirectory()) {
+    if (!_isDirectory(filePath)) {
       listFileR.push(relPath);
       relPath = _dirname(relPath);
     };
@@ -253,11 +259,13 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
     _copyFileSync(_join(fromDir, filePathR), filePath);
   };
 
-  return this.queue;
+  return this.queue.length;
 
 };
 
 DASExecutor_proto.move = function (fromDir, toDir) {
+  fromDir = _resolve(fromDir);
+  toDir = _resolve(toDir);
 
   // R: Relative path
   // @Source: Filter available paths in source
@@ -271,7 +279,7 @@ DASExecutor_proto.move = function (fromDir, toDir) {
       || !_dirContains(fromDir, filePath)
     ) continue;
 
-    if (!_statSync(filePath).isDirectory()) {
+    if (!_isDirectory(filePath)) {
       listFileR.push(relPath);
       relPath = _dirname(relPath);
     };
@@ -345,13 +353,9 @@ DASExecutor_proto.remove = function (atDir) {
     if (
       !_existsSync(filePath = _join(atDir, relPath))
       || !_dirContains(atDir, filePath)
-      || atDir === filePath
-    ) {
-      continue
-    };
+    ) continue;
 
-    if (!_statSync(filePath).isDirectory()) {
-      console.log("xxx -> ", filePath)
+    if (!_isDirectory(filePath)) {
       listFileR.push(relPath);
       relPath = _dirname(relPath);
     };
@@ -380,11 +384,65 @@ DASExecutor_proto.remove = function (atDir) {
       _rmdirSync(dir, { force: true, recursive: true });
     };
 
-  return this.queue;
+  return this.queue.length;
 };
 
 DASExecutor_proto.touch = function (atDir) {
+  atDir = _resolve(atDir);
 
+  // R: Relative path
+  // @Dest: Filter available paths in Dest
+  //        Get the involved directories for next phase
+  var listFileR = [], listDirR = [];
+
+  var filePath, relPath; for (relPath of this.relativePathArray) {
+    if (_existsSync(filePath = _join(atDir, relPath))) continue;
+    if (!_dirContains(atDir, filePath)) continue;
+
+    listFileR.push(relPath);
+    relPath = _dirname(relPath);
+
+    do { listDirR.push(relPath) }
+    while (relPath !== (relPath = _dirname(relPath)));
+  };
+
+  listFileR = AAS.distinct(listFileR).sort();
+  listDirR = AAS.distinct(listDirR).sort()
+    .filter(function (rPath) { return rPath !== "." && rPath !== "" });
+
+  // @Dest  : Preparing Directory tree at destination
+  //          If pair did not exists, make that as directory
+  //          If pair is not direcrory, remove that then make that as directory
+  var dir, dirR;
+  for (dirR of listDirR) {
+    if (!_existsSync(dir = _join(atDir, dirR))) {
+      this.log(["mkdir", dir]);
+      _mkdirSync(dir);
+    }
+    else if (!_isDirectory(dir)) {
+      this.log(["unlinkSync", dir]);
+      _unlinkSync(dir);
+      this.log(["mkdir", dir]);
+      _mkdirSync(dir);
+    };
+  };
+
+  // @Dest  : If path to file/directory wasnot exist, touch that.
+  var filePath, relPath; for (relPath of listFileR) {
+    if (_existsSync(filePath = _join(atDir, relPath))) continue;
+    this.log(["touch", filePath]);
+    _touch(filePath);
+  };
+
+  // @Dest : Remove emty folder at destination
+  var dir, dirR;
+  for (dirR of listDirR)
+    if (_existsSync(dir = _join(atDir, dirR)) && _readdirSync(dir).length === 0) {
+      this.log(["rmdirSync", dir]);
+      _rmdirSync(dir, { force: true, recursive: true });
+    };
+
+  return this.queue.length;
 };
 
 
@@ -525,10 +583,7 @@ DASApp_proto.loadState = function (anchorDir) {
   var cwd = process.cwd(), curBasePath;
 
   for (alia in _alias) if (_dirContains((curBasePath = _alias[alia]), cwd)) {
-    if (_dirContains(data.partner, cwd)) {
-      data.base = data.partner;
-      data.partner = curBasePath;
-    };
+    if (_dirContains(data.partner, cwd)) data.partner = data.base;
     data.base = curBasePath;
     break;
   };
@@ -539,7 +594,6 @@ DASApp_proto.loadState = function (anchorDir) {
     : ".";
 
 };
-
 
 DASApp_proto.saveState = function (anchorDir) {
   if (anchorDir !== undefined) this.anchorDir = anchorDir;
@@ -625,6 +679,11 @@ DASApp_proto.showState = function () {
         + fPath;
     })
     .join("\n");
+
+  out += "\n";
+  out += "\n";
+  out += "Base      : (" + this.getAliasOf(this.base.path) + ") " + _relative(this.anchorDir, this.base.path) + path.sep + "\n";
+  out += "⑅ Partner : (" + this.getAliasOf(this.partner.path) + ") " + _relative(this.anchorDir, this.partner.path) + path.sep;
 
   return out;
 };
@@ -868,12 +927,20 @@ DASApp_proto.removeAt = function (at) {
     );
 };
 
-//#TODO:
-DASApp_proto.touch = function (key) {
+DASApp_proto.touch = function (at) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .touch(
+      at !== undefined ? this.realia(at) : this.base.path
+    );
 };
 
-//#TODO:
-DASApp_proto.touchAt = function (key) {
+DASApp_proto.touchAt = function (at) {
+  return DASExecutor
+    .fromArray(this.selectedSet)
+    .touch(
+      at !== undefined ? this.realia(at) : this.partner.path
+    );
 };
 
 DASApp_proto.nop = function (key) {
