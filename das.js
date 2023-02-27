@@ -832,17 +832,14 @@ DASApp_proto.unstashSelectedSet = function (key) {
   return this.selectedSet
 };
 
-//#TODO: have not tested yet
 DASApp_proto.unionStash = function (key) {
   return this.selectedSet = AAS.union(this.selectedSet, this.stashSet[key])
 };
 
-//#TODO: have not tested yet
 DASApp_proto.intersectStash = function (key) {
   return this.selectedSet = AAS.intersect(this.selectedSet, this.stashSet[key])
 };
 
-//#TODO: have not tested yet
 DASApp_proto.exceptStash = function (key) {
   return this.selectedSet = AAS.except(this.selectedSet, this.stashSet[key])
 };
