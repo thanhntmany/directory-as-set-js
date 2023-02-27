@@ -663,17 +663,17 @@ DASApp_proto.showState = function () {
 
   var baseOwnSection = this.getBaseOwnSection(_relativePath);
   var partnerOwnSection = this.getPartnerOwnSection(_relativePath);
-  var lsSet = AAS.union(selectedInCurDirArray, baseOwnSection, partnerOwnSection);
-
   var intersectSection = this.getInterSection(_relativePath);
   var baseSection = this.getBaseSection(_relativePath);
   var partnerSection = this.getPartnerSection(_relativePath);
+  var lsSet = AAS.union(selectedInCurDirArray, baseOwnSection, partnerOwnSection);
+
 
   var stdoutWidth = process.stdout.columns, fPath;
   out += lsSet.sort()
     .map(function (rPath) {
       fPath = _relative(_relativePath, rPath);
-      if (fPath.length > stdoutWidth - 20) fPath = "..." + fPath.slice(fPath.length - (stdoutWidth - 20) + 3);
+      if (fPath.length > stdoutWidth - 20) fPath = "..." + fPath.slice(fPath.length - (stdoutWidth - 12) + 3);
       return " "
         + (!baseOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "b")) + "  "
         + (!partnerOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "p")) + "  "
