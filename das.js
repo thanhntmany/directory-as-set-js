@@ -211,8 +211,9 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
     while (relPath !== (relPath = _dirname(relPath)));
   };
 
-  listDirR = AAS.distinct(listDirR).sort();
   listFileR = AAS.distinct(listFileR).sort();
+  listDirR = AAS.distinct(listDirR).sort()
+    .filter(function (rPath) { return rPath !== "." && rPath !== "" });
 
 
   // @Dest  : Preparing Directory tree at destination
@@ -238,14 +239,13 @@ DASExecutor_proto.copy = function (fromDir, toDir) {
   var filePath, filePathR; for (filePathR of listFileR) {
 
     if (_existsSync(filePath = _join(toDir, filePathR))) {
-      console.log("filePath:", filePath);
       if (!_isDirectory(filePath)) {
         this.log(["unlinkSync", filePath]);
         _unlinkSync(filePath);
       }
       else {
         this.log(["rmdirSync", filePath]);
-        _rmdirSync(_dirname(filePath), { force: true, recursive: true });
+        _rmdirSync(filePath, { force: true, recursive: true });
       };
     };
 
@@ -280,8 +280,9 @@ DASExecutor_proto.move = function (fromDir, toDir) {
     while (relPath !== (relPath = _dirname(relPath)));
   };
 
-  listDirR = AAS.distinct(listDirR).sort();
   listFileR = AAS.distinct(listFileR).sort();
+  listDirR = AAS.distinct(listDirR).sort()
+    .filter(function (rPath) { return rPath !== "." && rPath !== "" });
 
 
   // @Dest  : Preparing Directory tree at destination
@@ -312,7 +313,7 @@ DASExecutor_proto.move = function (fromDir, toDir) {
       }
       else {
         this.log(["rmdirSync", filePath]);
-        _rmdirSync(_dirname(filePath), { force: true, recursive: true });
+        _rmdirSync(filePath, { force: true, recursive: true });
       };
     };
 
@@ -325,7 +326,7 @@ DASExecutor_proto.move = function (fromDir, toDir) {
   listDirR.reverse();
   for (dirR of listDirR) if (_readdirSync(dir = _join(fromDir, dirR)).length === 0) {
     this.log(["rmdirSync", dir]);
-    _rmdirSync(_dirname(dir), { force: true, recursive: true });
+    _rmdirSync(dir, { force: true, recursive: true });
   };
 
   return this.queue.length;
@@ -359,8 +360,9 @@ DASExecutor_proto.remove = function (atDir) {
     while (relPath !== (relPath = _dirname(relPath)));
   };
 
-  listDirR = AAS.distinct(listDirR).sort();
   listFileR = AAS.distinct(listFileR).sort();
+  listDirR = AAS.distinct(listDirR).sort()
+    .filter(function (rPath) { return rPath !== "." && rPath !== "" });
 
 
   // @Source: Remove file by file, traversal from leaf to root
@@ -371,12 +373,11 @@ DASExecutor_proto.remove = function (atDir) {
   };
 
   // @Source: Remove emty folder at source
-  listDirR.reverse();
   var dir, dirR;
   for (dirR of listDirR)
     if (_existsSync(dir = _join(atDir, dirR)) && _readdirSync(dir).length === 0) {
       this.log(["rmdirSync", dir]);
-      _rmdirSync(_dirname(dir), { force: true, recursive: true });
+      _rmdirSync(dir, { force: true, recursive: true });
     };
 
   return this.queue;
@@ -521,20 +522,15 @@ DASApp_proto.loadState = function (anchorDir) {
   data.base = _join(anchorDir, data.base);
   data.partner = _join(anchorDir, data.partner);
 
-  var cwd = process.cwd();
-  if (!_dirContains(data.base, cwd)) {
-    var curBasePath = data.base;
+  var cwd = process.cwd(), curBasePath;
 
+  for (alia in _alias) if (_dirContains((curBasePath = _alias[alia]), cwd)) {
     if (_dirContains(data.partner, cwd)) {
       data.base = data.partner;
       data.partner = curBasePath;
-    }
-    else {
-      for (alia in _alias) if (_dirContains((curBasePath = _alias[alia]), cwd)) {
-        data.base = curBasePath;
-        break;
-      };
     };
+    data.base = curBasePath;
+    break;
   };
 
   this.constructor.call(this, data);
@@ -619,9 +615,9 @@ DASApp_proto.showState = function () {
   out += lsSet.sort()
     .map(function (rPath) {
       return " "
-        + (baseSection.includes(rPath) ? "b" : " ") + "  "
+        + (baseOwnSection.includes(rPath) ? "b" : " ") + "  "
         + (intersectSection.includes(rPath) ? "i" : " ") + "  "
-        + (partnerSection.includes(rPath) ? "p" : " ") + "  "
+        + (partnerOwnSection.includes(rPath) ? "p" : " ") + "  "
         + "│"
         + (selectedInCurDirArray.includes(rPath) ? "▶" : " ") + " "
         + _relative(_relativePath, rPath)
