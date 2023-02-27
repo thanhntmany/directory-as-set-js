@@ -160,12 +160,12 @@ const ArrayAsSetHelper = {
 
   keepMatchRegex: function (arr, pattern, flags) {
     var regex = new RegExp(pattern, flags || "g");
-    return arr.filter(function (el) {return el.match(regex)})
+    return arr.filter(function (el) { return el.match(regex) })
   },
 
   removeMatchRegex: function (arr, pattern, flags) {
     var regex = new RegExp(pattern, flags || "g");
-    return arr.filter(function (el) {return !el.match(regex)})
+    return arr.filter(function (el) { return !el.match(regex) })
   },
 
 };
@@ -621,72 +621,63 @@ DASApp_proto.saveState = function (anchorDir) {
 DASApp_proto.showState = function () {
   var out = '';
 
-  out += "Anchor Directory : " + this.anchorDir + path.sep + "\n";
-  out += "\n";
+  if (this.relativePath !== null) {
+    var _relativePath = this.relativePath;
+    var cwd = _join(this.base.path, _relativePath);
+    var selectedArray = this.selectedSet;
+    var selectedInCurDirArray = selectedArray.filter(function (rPath) {
+      return _dirContains(cwd, _join(this.base.path, rPath))
+    }, this)
+
+    out += "{ " + selectedArray.length + " }: Selected \n";
+    out += "< " + (selectedArray.length - selectedInCurDirArray.length) + " >: │" + (selectedArray.length - selectedInCurDirArray.length > 0 ? "▶ ..." : "") + "\n";
+    out += "< " + selectedInCurDirArray.length + " >: " + _relativePath + path.sep + "\n";
+
+    var baseOwnSection = this.getBaseOwnSection(_relativePath);
+    var partnerOwnSection = this.getPartnerOwnSection(_relativePath);
+    var intersectSection = this.getInterSection(_relativePath);
+    var baseSection = this.getBaseSection(_relativePath);
+    var partnerSection = this.getPartnerSection(_relativePath);
+    var lsSet = AAS.union(selectedInCurDirArray, baseOwnSection, partnerOwnSection);
+
+
+    var stdoutWidth = process.stdout.columns, fPath;
+    out += lsSet.sort()
+      .map(function (rPath) {
+        fPath = _relative(_relativePath, rPath);
+        if (fPath.length > stdoutWidth - 20) fPath = "..." + fPath.slice(fPath.length - (stdoutWidth - 12) + 3);
+        return " "
+          + (!baseOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "b")) + "  "
+          + (!partnerOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "p")) + "  "
+          + "│"
+          + (selectedInCurDirArray.includes(rPath) ? "▶" : " ") + " "
+          + fPath;
+      })
+      .join("\n");
+    out += "\n";
+    out += "\n";
+  };
+
+  var pad = Math.floor(stdoutWidth / 5);
+
+  out += "Base  : [ " + this.getAliasOf(this.base.path) + " ]~/" + _relative(this.anchorDir, this.base.path) + path.sep;
+  out += "    <~~~>    ";
+  out += "Partner: [ " + this.getAliasOf(this.partner.path) + " ]~/" + _relative(this.anchorDir, this.partner.path) + path.sep;
+  out += "\n\n";
 
   if (Object.keys(this.alias).length > 0) {
-    out += "Alias :\n";
-    var pad = Math.max.apply(null, Object.keys(this.alias).map(function (a) { return a.length }));
-    for (var alia in this.alias) {
-      out += "  (" + alia.padEnd(pad, " ") + ") " + _relative(this.anchorDir, this.alias[alia]) + path.sep + "\n";
-    };
+    out += "Alias :    ";
+    for (var alia in this.alias) out += ("[ " + alia + " ]~/" + _relative(this.anchorDir, this.alias[alia]) + path.sep).padEnd(pad) + "    ";
     out += "\n";
   };
 
   if (Object.keys(this.stashSet).length > 0) {
-    out += "Stash :\n";
-    var pad = Math.max.apply(null, Object.keys(this.stashSet).map(function (a) { return a.length }));
-    for (var alia in this.stashSet) {
-      out += "  " + alia.padEnd(pad, " ") + ": (" + this.stashSet[alia].length + ")\n";
-    };
+    out += "Stash :    ";
+    for (var alia in this.stashSet) out += ("(" + alia + "): " + this.stashSet[alia].length).padEnd(pad) + "    ";
     out += "\n";
   };
 
-
-  out += "Base      : (" + this.getAliasOf(this.base.path) + ") " + _relative(this.anchorDir, this.base.path) + path.sep + "\n";
-  out += "⑅ Partner : (" + this.getAliasOf(this.partner.path) + ") " + _relative(this.anchorDir, this.partner.path) + path.sep + "\n";
-  out += "\n";
-
-  if (this.relativePath === null) return out;
-
-  var _relativePath = this.relativePath;
-  var cwd = _join(this.base.path, _relativePath);
-  var selectedArray = this.selectedSet;
-  var selectedInCurDirArray = selectedArray.filter(function (rPath) {
-    return _dirContains(cwd, _join(this.base.path, rPath))
-  }, this)
-
-  out += "Selected  : " + selectedArray.length + "\n";
-  out += "[ " + (selectedArray.length - selectedInCurDirArray.length) + " ] :   │" + (selectedArray.length - selectedInCurDirArray.length > 0 ? "▶ ..." : "") + "\n";
-  out += "[ " + selectedInCurDirArray.length + " ] : " + _relativePath + path.sep + "\n";
-
-  var baseOwnSection = this.getBaseOwnSection(_relativePath);
-  var partnerOwnSection = this.getPartnerOwnSection(_relativePath);
-  var intersectSection = this.getInterSection(_relativePath);
-  var baseSection = this.getBaseSection(_relativePath);
-  var partnerSection = this.getPartnerSection(_relativePath);
-  var lsSet = AAS.union(selectedInCurDirArray, baseOwnSection, partnerOwnSection);
-
-
-  var stdoutWidth = process.stdout.columns, fPath;
-  out += lsSet.sort()
-    .map(function (rPath) {
-      fPath = _relative(_relativePath, rPath);
-      if (fPath.length > stdoutWidth - 20) fPath = "..." + fPath.slice(fPath.length - (stdoutWidth - 12) + 3);
-      return " "
-        + (!baseOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "b")) + "  "
-        + (!partnerOwnSection.includes(rPath) ? " " : (intersectSection.includes(rPath) ? "i" : "p")) + "  "
-        + "│"
-        + (selectedInCurDirArray.includes(rPath) ? "▶" : " ") + " "
-        + fPath;
-    })
-    .join("\n");
-
-  out += "\n";
-  out += "\n";
-  out += "Base      : (" + this.getAliasOf(this.base.path) + ") " + _relative(this.anchorDir, this.base.path) + path.sep + "\n";
-  out += "⑅ Partner : (" + this.getAliasOf(this.partner.path) + ") " + _relative(this.anchorDir, this.partner.path) + path.sep;
-
+  out += "Anchor: " + this.anchorDir + path.sep;
   return out;
 };
 
