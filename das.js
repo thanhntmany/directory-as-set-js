@@ -158,15 +158,14 @@ const ArrayAsSetHelper = {
     return out;
   },
 
-  //#TODO: have not tested yet
   keepMatchRegex: function (arr, pattern, flags) {
-    return arr.filter((new RegExp(pattern, flags || "g")).test)
+    var regex = new RegExp(pattern, flags || "g");
+    return arr.filter(function (el) {return el.match(regex)})
   },
 
-  //#TODO: have not tested yet
   removeMatchRegex: function (arr, pattern, flags) {
-    var test = (new RegExp(pattern, flags || "g")).test
-    return arr.filter(function (el) { return !test(el) });
+    var regex = new RegExp(pattern, flags || "g");
+    return arr.filter(function (el) {return !el.match(regex)})
   },
 
 };
@@ -808,12 +807,10 @@ DASApp_proto.getSelectedSet = function () {
   return this.selectedSet;
 };
 
-//#TODO: have not tested yet
 DASApp_proto.keepMatchRegex = function (pattern, flags) {
   return this.selectedSet = AAS.keepMatchRegex(this.selectedSet, pattern, flags);
 };
 
-//#TODO: have not tested yet
 DASApp_proto.removeMatchRegex = function (pattern, flags) {
   return this.selectedSet = AAS.removeMatchRegex(this.selectedSet, pattern, flags);
 };
