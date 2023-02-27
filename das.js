@@ -188,7 +188,8 @@ DASExecutor.fromArray = function (array) {
 const DASExecutor_proto = DASExecutor.prototype;
 
 DASExecutor_proto.log = function () {
-  console.log(arguments)
+  console.log(Array.from(arguments).flat().join("\n  "))
+  console.log("");
 };
 
 DASExecutor_proto.copy = function (fromDir, toDir) {
@@ -688,29 +689,6 @@ DASApp_proto.showState = function () {
   return out;
 };
 
-// debug XXXXXXXXXXXXXXXXXXXXXX
-DASApp_proto.xxx = function () {
-  console.log("base:", this.base.path);
-  console.log("relativePath:", this.relativePath);
-  var x = "src/img/icon-facebook.png";
-  console.log(x = _dirname(x));
-  console.log(x = _dirname(x));
-  console.log(x = _dirname(x));
-  console.log(x = _dirname(x));
-
-
-  var listFile = [];
-  var listDir = [];
-  var relPath, filePath, fileStats, _relPath;
-  relPath = "src/img/a/c/s/x/icon-facebook.png"
-  do {
-    listDir.push(relPath);
-  } while (relPath !== (relPath = _dirname(relPath)));
-
-  console.log(listDir);
-  return "";
-};
-
 // Base
 DASApp_proto.setBase = function (inputString) {
   this.base = new DASdirectory(this.realia(inputString));
@@ -1015,7 +993,7 @@ DASCmdRunner_proto.cmdAlias = {
   "cpf": "copyFrom",
   "cpt": "copyTo",
   "mvf": "moveFrom",
-  "mvr": "moveTo",
+  "mvt": "moveTo",
   "rmf": "remove",
   "rmt": "removeAt",
   "tof": "touch",
