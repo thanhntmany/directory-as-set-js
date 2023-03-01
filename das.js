@@ -540,6 +540,9 @@ DASApp_proto.toString = function () {
 // State handling
 DASApp_proto.ANCHOR = ".das";
 DASApp_proto.STATEFILE = "state.json";
+DASApp_proto.TMPDIR = "tmp";
+DASApp_proto.SELECTEDSETFILE = "selectedSet.json";
+DASApp_proto.STASHSETDIR = "stashset";
 DASApp_proto.BACKUPDIR = "backup";
 
 DASApp_proto.findAnchor = function (dirPath) {
@@ -591,6 +594,14 @@ DASApp_proto.loadState = function (anchorDir) {
     break;
   };
 
+  var selectedSetFile = _join(data.anchorDir, this.ANCHOR, this.TMPDIR, this.SELECTEDSETFILE);
+  data.selectedSet = JSON.parse(_readFileSync(selectedSetFile, 'utf8'));
+
+  data.stashSet = {};
+  var stashSetDir = _join(data.anchorDir, this.ANCHOR, this.TMPDIR, this.STASHSETDIR);
+  for (var staFile of _readdirSync(stashSetDir))
+    data.stashSet[(staFile).replace(/(\.json)$/, '')] = JSON.parse(_readFileSync(_join(stashSetDir, staFile), 'utf8'));
+
   this.constructor.call(this, data);
   this.relativePath = _dirContains(this.base.path, cwd)
     ? _relative(this.base.path, cwd)
@@ -605,13 +616,23 @@ DASApp_proto.saveState = function (anchorDir) {
   var stateFile = this.getStateFilePath(_anchorDir);
   if (!_existsSync(_dirname(stateFile))) return;
 
-
   var data = this.toJSON();
+
   data.base = _relative(_anchorDir, data.base);
   data.partner = _relative(_anchorDir, data.partner);
 
   var _alias = data.alias, alia;
   for (alia in _alias) _alias[alia] = _relative(_anchorDir, _alias[alia]);
+
+  var selectedSetFile = _join(_anchorDir, this.ANCHOR, this.TMPDIR, this.SELECTEDSETFILE);
+  _writeFileSync(selectedSetFile, JSON.stringify(data.selectedSet, null, 4));
+  delete data.selectedSet;
+
+  var stashSetDir = _join(_anchorDir, this.ANCHOR, this.TMPDIR, this.STASHSETDIR);
+  _mkdirSync(stashSetDir, { recursive: true });
+  for (var sta in data.stashSet)
+    _writeFileSync(_join(stashSetDir, sta + ".json"), JSON.stringify(data.stashSet[sta], null, 4));
+  delete data.stashSet;
 
   delete data.anchorDir;
   _mkdirSync(_dirname(stateFile), { recursive: true });
@@ -636,8 +657,8 @@ DASApp_proto.showState = function () {
     var baseOwnSection = this.getBaseOwnSection(_relativePath);
     var partnerOwnSection = this.getPartnerOwnSection(_relativePath);
     var intersectSection = this.getInterSection(_relativePath);
-    var baseSection = this.getBaseSection(_relativePath);
-    var partnerSection = this.getPartnerSection(_relativePath);
+    // var baseSection = this.getBaseSection(_relativePath);
+    // var partnerSection = this.getPartnerSection(_relativePath);
     var lsSet = AAS.union(selectedInCurDirArray, baseOwnSection, partnerOwnSection);
 
 
@@ -911,7 +932,7 @@ DASApp_proto.touchAt = function (at) {
 DASApp_proto.getBackupDir = function (to) {
   var dirPath = to !== undefined
     ? this.realia(to)
-    : _join(this.anchorDir, this.ANCHOR, this.BACKUPDIR);
+    : _join(this.anchorDir, this.ANCHOR, this.TMPDIR, this.BACKUPDIR);
   if (_existsSync(dirPath) && !_isDirectory(dirPath)) _unlinkSync(dirPath);
   _mkdirSync(dirPath, { recursive: true });
   return dirPath
