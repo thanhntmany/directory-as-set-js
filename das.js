@@ -625,6 +625,7 @@ DASApp_proto.saveState = function (anchorDir) {
   for (alia in _alias) _alias[alia] = _relative(_anchorDir, _alias[alia]);
 
   var selectedSetFile = _join(_anchorDir, this.ANCHOR, this.TMPDIR, this.SELECTEDSETFILE);
+  _mkdirSync(_dirname(selectedSetFile), { recursive: true });
   _writeFileSync(selectedSetFile, JSON.stringify(data.selectedSet, null, 4));
   delete data.selectedSet;
 
