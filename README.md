@@ -25,5 +25,5 @@ sudo npm i -g https://github.com/thanhntmany/directory-as-set-js
 
 ### .gitignore
 ```bash
-.das/tmp/
+**/.das/tmp/**
 ```
