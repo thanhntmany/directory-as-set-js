@@ -595,11 +595,11 @@ DASApp_proto.loadState = function (anchorDir) {
   };
 
   var selectedSetFile = _join(data.anchorDir, this.ANCHOR, this.TMPDIR, this.SELECTEDSETFILE);
-  data.selectedSet = JSON.parse(_readFileSync(selectedSetFile, 'utf8'));
+  data.selectedSet = _existsSync(selectedSetFile) ? JSON.parse(_readFileSync(selectedSetFile, 'utf8')) : [];
 
   data.stashSet = {};
   var stashSetDir = _join(data.anchorDir, this.ANCHOR, this.TMPDIR, this.STASHSETDIR);
-  for (var staFile of _readdirSync(stashSetDir))
+  if (_existsSync(stashSetDir)) for (var staFile of _readdirSync(stashSetDir))
     data.stashSet[(staFile).replace(/(\.json)$/, '')] = JSON.parse(_readFileSync(_join(stashSetDir, staFile), 'utf8'));
 
   this.constructor.call(this, data);
